@@ -3,6 +3,7 @@
     "allow": [
       "Bash(uv run *)",
       "Bash(uv sync)",
+      "Bash(uv add *)",
       "Bash(git add *)",
       "Bash(git commit *)",
       "Bash(git status)",
@@ -16,8 +17,7 @@
     ],
     "deny": [
       "Bash(rm -rf *)",
-      "Bash(pip install *)",
-      "Bash(uv add *)"
+      "Bash(pip install *)"
     ]
   }
 }
