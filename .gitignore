@@ -1,0 +1,61 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+dist/
+build/
+*.egg-info/
+.eggs/
+.streamlit/
+.ruff_cache/
+
+# UV
+.uv/
+
+# Environment
+.env
+.env.local
+*.env
+
+# IDE
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project outputs
+data/outputs/
+data/temp/
+data/sessions.db
+*.xlsx
+*.xls
+*.pdf
+*.docx
+*.doc
+!data/templates/*.xlsx
+!tests/fixtures/*.xlsx
+!tests/fixtures/*.pdf
+!tests/fixtures/*.pdf
+!data/sample_pdds/sample_*
+
+# Logs — track directory, exclude log files
+logs/*.log
+
+# Test cache
+.pytest_cache/
+.coverage
+htmlcov/
+
+# mypy
+.mypy_cache/
+
+CLAUDE.md
