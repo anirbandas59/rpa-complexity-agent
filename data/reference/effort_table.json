@@ -1,0 +1,79 @@
+{
+  "metadata": {
+    "tiers": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL"
+    ],
+    "phases": [
+      "define",
+      "build",
+      "uat",
+      "deploy"
+    ],
+    "units": "days",
+    "note": "S tier values are [min, max] ranges; all others are fixed integers"
+  },
+  "efforts": {
+    "XS": {
+      "define": 3,
+      "build": 5,
+      "uat": 1,
+      "deploy": 1,
+      "total": 10,
+      "sprints": 1
+    },
+    "S": {
+      "define": [
+        7,
+        15
+      ],
+      "build": [
+        8,
+        15
+      ],
+      "uat": [
+        3,
+        5
+      ],
+      "deploy": [
+        2,
+        5
+      ],
+      "total": [
+        20,
+        40
+      ],
+      "sprints": [
+        2,
+        4
+      ]
+    },
+    "M": {
+      "define": 15,
+      "build": 25,
+      "uat": 5,
+      "deploy": 5,
+      "total": 50,
+      "sprints": 5
+    },
+    "L": {
+      "define": 20,
+      "build": 30,
+      "uat": 5,
+      "deploy": 5,
+      "total": 60,
+      "sprints": 6
+    },
+    "XL": {
+      "define": 25,
+      "build": 40,
+      "uat": 10,
+      "deploy": 5,
+      "total": 80,
+      "sprints": 8
+    }
+  }
+}

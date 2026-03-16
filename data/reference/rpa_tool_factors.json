@@ -1,0 +1,38 @@
+{
+  "metadata": {
+    "tools": [
+      "blue_prism",
+      "uipath",
+      "power_automate",
+      "aa360"
+    ],
+    "multiplier_types": [
+      "surface_automation",
+      "api_integration",
+      "default"
+    ],
+    "description": "Per-tool effort multipliers based on automation type"
+  },
+  "factors": {
+    "blue_prism": {
+      "surface_automation": 1.3,
+      "api_integration": 1.1,
+      "default": 1.0
+    },
+    "uipath": {
+      "surface_automation": 1.1,
+      "api_integration": 1.0,
+      "default": 1.0
+    },
+    "power_automate": {
+      "surface_automation": 1.4,
+      "api_integration": 0.9,
+      "default": 1.0
+    },
+    "aa360": {
+      "surface_automation": 1.2,
+      "api_integration": 1.1,
+      "default": 1.0
+    }
+  }
+}

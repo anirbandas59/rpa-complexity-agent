@@ -1,0 +1,131 @@
+{
+  "metadata": {
+    "attributes": [
+      "activities",
+      "business_rules",
+      "layouts",
+      "interfaces",
+      "technology"
+    ],
+    "tiers": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL"
+    ],
+    "description": "Weight assignment for each attribute-tier combination with tier definitions"
+  },
+  "weights": {
+    "activities": {
+      "XS": {
+        "weight": 2,
+        "range": "1-5 activities"
+      },
+      "S": {
+        "weight": 2,
+        "range": "6-15 activities"
+      },
+      "M": {
+        "weight": 4,
+        "range": "16-30 activities"
+      },
+      "L": {
+        "weight": 6,
+        "range": "31-40 activities"
+      },
+      "XL": {
+        "weight": 8,
+        "range": "41-60+ activities"
+      }
+    },
+    "business_rules": {
+      "XS": {
+        "weight": 2,
+        "range": "0-1 rule"
+      },
+      "S": {
+        "weight": 2,
+        "range": "2-3 rules"
+      },
+      "M": {
+        "weight": 4,
+        "range": "4 rules"
+      },
+      "L": {
+        "weight": 6,
+        "range": "5 rules"
+      },
+      "XL": {
+        "weight": 8,
+        "range": "6+ rules"
+      }
+    },
+    "layouts": {
+      "XS": {
+        "weight": 1,
+        "range": "0-1 screen"
+      },
+      "S": {
+        "weight": 1,
+        "range": "2-3 screens"
+      },
+      "M": {
+        "weight": 2,
+        "range": "4 screens"
+      },
+      "L": {
+        "weight": 3,
+        "range": "5-6 screens"
+      },
+      "XL": {
+        "weight": 4,
+        "range": "7+ screens"
+      }
+    },
+    "interfaces": {
+      "XS": {
+        "weight": 1,
+        "range": "0 interfaces"
+      },
+      "S": {
+        "weight": 1,
+        "range": "1-2 interfaces"
+      },
+      "M": {
+        "weight": 2,
+        "range": "3-4 interfaces"
+      },
+      "L": {
+        "weight": 3,
+        "range": "5-6 interfaces"
+      },
+      "XL": {
+        "weight": 4,
+        "range": "7+ interfaces"
+      }
+    },
+    "technology": {
+      "XS": {
+        "weight": 1,
+        "range": "0 integrations"
+      },
+      "S": {
+        "weight": 1,
+        "range": "1 integration"
+      },
+      "M": {
+        "weight": 2,
+        "range": "2 integrations"
+      },
+      "L": {
+        "weight": 3,
+        "range": "3-4 integrations"
+      },
+      "XL": {
+        "weight": 4,
+        "range": "5+ integrations"
+      }
+    }
+  }
+}
