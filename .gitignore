@@ -39,9 +39,8 @@ data/temp/
 !data/templates/*.xlsx
 !tests/fixtures/*.xlsx
 
-# Logs
-logs/
-*.log
+# Logs — track directory, exclude log files
+logs/*.log
 
 # Test cache
 .pytest_cache/
