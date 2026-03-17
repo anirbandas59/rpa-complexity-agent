@@ -214,54 +214,56 @@ def _draw_page1(canvas: rl_canvas.Canvas, assessment_result: AssessmentResult) -
         y -= 25
 
         # PROJECT INFO BLOCK
-        canvas.setFont("Helvetica", 9)
+        info_y = y
+        canvas.setFont("Helvetica", 8)
         canvas.setFillColor(PDF_COLORS["text_light"])
 
         # Left column
         x_left = 50
-        canvas.drawString(x_left, y, "Project:")
-        canvas.setFont("Helvetica-Bold", 9)
+        canvas.drawString(x_left, info_y, "Project:")
+        canvas.setFont("Helvetica-Bold", 8)
         canvas.setFillColor(PDF_COLORS["text_dark"])
-        canvas.drawString(x_left + 60, y, assessment_result.project_name)
+        proj_name = assessment_result.project_name[:40]
+        canvas.drawString(x_left + 55, info_y, proj_name)
 
-        y -= 15
-        canvas.setFont("Helvetica", 9)
+        info_y -= 12
+        canvas.setFont("Helvetica", 8)
         canvas.setFillColor(PDF_COLORS["text_light"])
-        canvas.drawString(x_left, y, "RPA Platform:")
-        canvas.setFont("Helvetica-Bold", 9)
+        canvas.drawString(x_left, info_y, "RPA Platform:")
+        canvas.setFont("Helvetica-Bold", 8)
         canvas.setFillColor(PDF_COLORS["text_dark"])
-        canvas.drawString(x_left + 60, y, assessment_result.rpa_tool.value)
+        canvas.drawString(x_left + 55, info_y, assessment_result.rpa_tool.value)
 
-        y -= 15
-        canvas.setFont("Helvetica", 9)
+        info_y -= 12
+        canvas.setFont("Helvetica", 8)
         canvas.setFillColor(PDF_COLORS["text_light"])
-        canvas.drawString(x_left, y, "Assessed:")
-        canvas.setFont("Helvetica-Bold", 9)
+        canvas.drawString(x_left, info_y, "Assessed:")
+        canvas.setFont("Helvetica-Bold", 8)
         canvas.setFillColor(PDF_COLORS["text_dark"])
         assessed_date = assessment_result.created_at.strftime("%Y-%m-%d")
-        canvas.drawString(x_left + 60, y, assessed_date)
+        canvas.drawString(x_left + 55, info_y, assessed_date)
 
         # Right column
-        y_right = PAGE_HEIGHT - 70
-        x_right = PAGE_WIDTH / 2
-        canvas.setFont("Helvetica", 9)
+        info_y_right = y
+        x_right = PAGE_WIDTH / 2 + 10
+        canvas.setFont("Helvetica", 8)
         canvas.setFillColor(PDF_COLORS["text_light"])
 
-        canvas.drawString(x_right, y_right, "Session ID:")
-        canvas.setFont("Helvetica-Bold", 9)
+        canvas.drawString(x_right, info_y_right, "Session ID:")
+        canvas.setFont("Helvetica-Bold", 8)
         canvas.setFillColor(PDF_COLORS["text_dark"])
-        session_short = assessment_result.session_id[:16] + "..." if len(assessment_result.session_id) > 16 else assessment_result.session_id
-        canvas.drawString(x_right + 65, y_right, session_short)
+        session_short = assessment_result.session_id[:12] + "..." if len(assessment_result.session_id) > 12 else assessment_result.session_id
+        canvas.drawString(x_right + 65, info_y_right, session_short)
 
-        y_right -= 15
-        canvas.setFont("Helvetica", 9)
+        info_y_right -= 12
+        canvas.setFont("Helvetica", 8)
         canvas.setFillColor(PDF_COLORS["text_light"])
-        canvas.drawString(x_right, y_right, "Assessor:")
-        canvas.setFont("Helvetica-Bold", 9)
+        canvas.drawString(x_right, info_y_right, "Assessor:")
+        canvas.setFont("Helvetica-Bold", 8)
         canvas.setFillColor(PDF_COLORS["text_dark"])
-        canvas.drawString(x_right + 65, y_right, "RPA Agent (AI)")
+        canvas.drawString(x_right + 65, info_y_right, "RPA Agent (AI)")
 
-        y -= 70
+        y -= 55
 
         # COMPLEXITY RESULT
         y = _section_header(canvas, "COMPLEXITY CLASSIFICATION", y)
@@ -291,13 +293,15 @@ def _draw_page1(canvas: rl_canvas.Canvas, assessment_result: AssessmentResult) -
         y = _section_header(canvas, "ATTRIBUTE SCORE BREAKDOWN", y)
         y -= 20
 
-        # Table headers
+        # Table headers with better column proportions
         canvas.setFont("Helvetica-Bold", 9)
         canvas.setFillColor(PDF_COLORS["header"])
         canvas.rect(40, y - 16, PAGE_WIDTH - 80, 16, fill=1, stroke=0)
 
         canvas.setFillColor(white)
-        col_x = [50, 200, 280, 340, 400]
+        # Optimized column positions (left margin 50, right margin 40)
+        col_x = [50, 165, 225, 275, 330]
+        col_widths = [115, 60, 50, 55, 155]
         headers = ["Attribute", "Raw Value", "Tier", "Weight", "Rationale"]
         for i, header in enumerate(headers):
             canvas.drawString(col_x[i], y - 13, header)
@@ -314,19 +318,21 @@ def _draw_page1(canvas: rl_canvas.Canvas, assessment_result: AssessmentResult) -
                 canvas.rect(40, y - row_height, PAGE_WIDTH - 80, row_height, fill=1, stroke=0)
 
             canvas.setFillColor(PDF_COLORS["text_dark"])
-            canvas.drawString(col_x[0], y - 13, score.attribute_name)
+            # Truncate attribute name if too long
+            attr_name = score.attribute_name[:15]
+            canvas.drawString(col_x[0], y - 13, attr_name)
             canvas.drawString(col_x[1], y - 13, str(score.raw_value))
 
             # Small tier badge
-            _tier_badge(canvas, score.selected_tier, col_x[2] - 5, y - row_height + 2, width=45, height=14)
+            _tier_badge(canvas, score.selected_tier, col_x[2] - 10, y - row_height + 2, width=40, height=14)
 
             # Reset fill color after badge
             canvas.setFillColor(PDF_COLORS["text_dark"])
             canvas.drawString(col_x[3], y - 13, str(score.weight))
 
-            # Truncate rationale
-            rationale = score.tier_rationale[:35]
-            if len(score.tier_rationale) > 35:
+            # Truncate rationale to fit column
+            rationale = score.tier_rationale[:28]
+            if len(score.tier_rationale) > 28:
                 rationale += "..."
             canvas.drawString(col_x[4], y - 13, rationale)
 
@@ -338,7 +344,7 @@ def _draw_page1(canvas: rl_canvas.Canvas, assessment_result: AssessmentResult) -
         canvas.setFont("Helvetica-Bold", 9)
         canvas.setFillColor(PDF_COLORS["text_dark"])
         canvas.drawString(col_x[0], y - 13, "TOTAL SCORE")
-        _tier_badge(canvas, assessment_result.complexity_tier, col_x[2] - 5, y - row_height + 2, width=45, height=14)
+        _tier_badge(canvas, assessment_result.complexity_tier, col_x[2] - 10, y - row_height + 2, width=40, height=14)
         canvas.setFillColor(PDF_COLORS["text_dark"])
         canvas.drawString(col_x[3], y - 13, str(assessment_result.total_score))
 
@@ -515,12 +521,11 @@ def _draw_page2(
         canvas.rect(40, y - 15, PAGE_WIDTH - 80, 15, fill=1, stroke=0)
 
         canvas.setFillColor(white)
-        canvas.drawString(50, y - 11, "Feature")
-        canvas.drawString(225, y - 11, "Start")
-        canvas.drawString(295, y - 11, "End")
-        canvas.drawString(360, y - 11, "Hours")
-        canvas.drawString(410, y - 11, "SP")
-        canvas.drawString(450, y - 11, "Status")
+        # Optimized timeline columns
+        timeline_col_x = [50, 185, 255, 320, 375, 430]
+        timeline_headers = ["Feature", "Start", "End", "Hours", "SP", "Status"]
+        for i, header in enumerate(timeline_headers):
+            canvas.drawString(timeline_col_x[i], y - 11, header)
 
         y -= 19
 
@@ -537,19 +542,19 @@ def _draw_page2(
 
             canvas.setFillColor(PDF_COLORS["text_dark"])
 
-            # Feature name (truncate)
-            feature_name = feature.name[:30]
-            if len(feature.name) > 30:
+            # Feature name (truncate to fit)
+            feature_name = feature.name[:20]
+            if len(feature.name) > 20:
                 feature_name += "..."
-            canvas.drawString(50, y - 11, feature_name)
+            canvas.drawString(timeline_col_x[0], y - 11, feature_name)
 
             # Dates
-            canvas.drawString(225, y - 11, str(feature.start_date))
-            canvas.drawString(295, y - 11, str(feature.end_date))
+            canvas.drawString(timeline_col_x[1], y - 11, str(feature.start_date))
+            canvas.drawString(timeline_col_x[2], y - 11, str(feature.end_date))
 
             # Hours and SP
-            canvas.drawString(360, y - 11, f"{feature.hours:.0f}")
-            canvas.drawString(410, y - 11, f"{feature.sp:.2f}")
+            canvas.drawString(timeline_col_x[3], y - 11, f"{feature.hours:.0f}")
+            canvas.drawString(timeline_col_x[4], y - 11, f"{feature.sp:.2f}")
 
             # Status with color
             status = feature.development_status
@@ -560,7 +565,7 @@ def _draw_page2(
             else:
                 canvas.setFillColor(PDF_COLORS["text_dark"])
 
-            canvas.drawString(450, y - 11, status)
+            canvas.drawString(timeline_col_x[5], y - 11, status)
 
             y -= row_height
 
