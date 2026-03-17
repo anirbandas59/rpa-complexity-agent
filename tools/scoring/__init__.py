@@ -5,6 +5,10 @@ from tools.scoring.attribute_scorer import (
     score_attribute,
     validate_attribute_score,
 )
+from tools.scoring.classifier_tool import (
+    classify_and_explain,
+    generate_reasoning,
+)
 from tools.scoring.weighted_calculator import (
     WeightedScore,
     calculate_weighted_score,
@@ -20,4 +24,7 @@ __all__ = [
     "WeightedScore",
     "calculate_weighted_score",
     "get_weighted_score_summary",
+    # classifier_tool exports
+    "classify_and_explain",
+    "generate_reasoning",
 ]
