@@ -127,15 +127,16 @@ def identify_document_sections(state: DocumentIntelligenceState) -> dict[str, An
         Dict with sections and updated warnings
     """
     session_id = state["session_id"]
+    parsed_doc = state.get("parsed_document")
 
     # Skip if document parsing failed
-    if state.get("status") == "failed" or state.get("parsed_document") is None:
+    if state.get("status") == "failed" or parsed_doc is None:
         return {}
 
     logger.info(f"[{session_id}] Identifying document sections")
 
     try:
-        sections = identify_sections(state["parsed_document"], llm_manager=None)
+        sections = identify_sections(parsed_doc, llm_manager=None)
 
         logger.info(f"[{session_id}] Found {len(sections)} sections")
 
@@ -165,9 +166,10 @@ def extract_document_entities(state: DocumentIntelligenceState) -> dict[str, Any
         Dict with entities and updated warnings
     """
     session_id = state["session_id"]
+    parsed_doc = state.get("parsed_document")
 
     # Skip if document parsing failed
-    if state.get("status") == "failed" or state.get("parsed_document") is None:
+    if state.get("status") == "failed" or parsed_doc is None:
         return {}
 
     sections = state.get("sections", [])
@@ -181,7 +183,7 @@ def extract_document_entities(state: DocumentIntelligenceState) -> dict[str, Any
         sections = [
             ExtractedSection(
                 title="Full Document",
-                content=state["parsed_document"].full_text[:5000],
+                content=parsed_doc.full_text[:5000],
                 section_type="general",
                 confidence_score=0.1,
                 page_number=None,
@@ -224,19 +226,20 @@ def validate_output(state: DocumentIntelligenceState) -> dict[str, Any]:
     """
     session_id = state["session_id"]
     warnings = list(state.get("warnings", []))
+    parsed_doc = state.get("parsed_document")
 
     # Failure conditions
-    if state.get("status") == "failed" or state.get("parsed_document") is None:
+    if state.get("status") == "failed" or parsed_doc is None:
         final_status = "failed"
     else:
         # Check needs_review conditions
         needs_review = False
 
         # a) Low word count
-        if state["parsed_document"].word_count() < 200:
+        word_count = parsed_doc.word_count()
+        if word_count < 200:
             warning = (
-                f"Document has very few words "
-                f"({state['parsed_document'].word_count()}) — "
+                f"Document has very few words ({word_count}) — "
                 "assessment accuracy may be low"
             )
             warnings.append(warning)
@@ -262,7 +265,7 @@ def validate_output(state: DocumentIntelligenceState) -> dict[str, Any]:
             needs_review = True
 
         # d) Document validity
-        if not state["parsed_document"].is_valid():
+        if not parsed_doc.is_valid():
             warning = (
                 "Document failed validity check — "
                 "may be image-based or corrupted"
@@ -306,13 +309,15 @@ def should_continue(state: DocumentIntelligenceState) -> str:
 # ==================== GRAPH CONSTRUCTION ====================
 
 
-def _build_graph() -> StateGraph:
+def _build_graph() -> Any:
     """Build and compile the LangGraph StateGraph.
 
     Returns:
         Compiled StateGraph
     """
-    graph = StateGraph(DocumentIntelligenceState)
+    graph: StateGraph[DocumentIntelligenceState] = StateGraph(
+        DocumentIntelligenceState
+    )
 
     # Add nodes
     graph.add_node("ingest_document", ingest_document)
@@ -350,7 +355,7 @@ _graph = _build_graph()
 
 def run(
     file_path: str, session_id: Optional[str] = None
-) -> DocumentIntelligenceState:
+) -> Any:
     """Run the Document Intelligence Agent.
 
     Parses document, identifies sections, extracts entities,
@@ -387,7 +392,7 @@ def run(
     )
 
     try:
-        final_state = _graph.invoke(initial_state)
+        final_state: Any = _graph.invoke(initial_state)
     except Exception as e:
         logger.error(f"[{session_id}] Document Intelligence Agent failed: {e}")
         raise AgentExecutionError(
