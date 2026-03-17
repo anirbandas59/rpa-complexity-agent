@@ -18,7 +18,7 @@ from core.constants import ComplexityTier
 @pytest.fixture(scope="module")
 def sample_pdf_path():
     """Path to sample_simple.pdf test fixture."""
-    path = Path(__file__).parent.parent / "fixtures" / "sample_simple.pdf"
+    path = Path(__file__).parent.parent.parent / "data" / "sample_pdds" / "sample_simple.pdf"
     # If fixture doesn't exist, skip this test
     if not path.exists():
         pytest.skip(f"Test fixture not found: {path}")
@@ -28,7 +28,7 @@ def sample_pdf_path():
 @pytest.fixture(scope="module")
 def sample_docx_path():
     """Path to sample_process.docx test fixture."""
-    path = Path(__file__).parent.parent / "fixtures" / "sample_process.docx"
+    path = Path(__file__).parent.parent.parent / "data" / "sample_pdds" / "sample_process.docx"
     # If fixture doesn't exist, skip this test
     if not path.exists():
         pytest.skip(f"Test fixture not found: {path}")

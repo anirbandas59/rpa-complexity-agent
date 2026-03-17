@@ -244,7 +244,7 @@ class TestEndToEndGroundTruth:
     @pytest.fixture(scope="class")
     def sample_docx_path(self):
         """Sample DOCX for E2E testing."""
-        path = Path(__file__).parent.parent / "fixtures" / "sample_process.docx"
+        path = Path(__file__).parent.parent.parent / "data" / "sample_pdds" / "sample_process.docx"
         if not path.exists():
             pytest.skip(f"Test fixture not found: {path}")
         return str(path.absolute())
