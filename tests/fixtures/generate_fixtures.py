@@ -11,7 +11,7 @@ from reportlab.lib import colors
 
 def generate_simple_pdf():
     """Generate sample_simple.pdf with 2 pages of text content."""
-    output_path = Path(__file__).parent / "sample_simple.pdf"
+    output_path = Path(__file__).parent.parent.parent / "data" / "sample_pdds" / "sample_simple.pdf"
 
     # Use canvas-based approach to ensure 2 distinct pages
     from reportlab.pdfgen import canvas
@@ -74,7 +74,7 @@ def generate_simple_pdf():
 
 def generate_table_pdf():
     """Generate sample_table.pdf with table data."""
-    output_path = Path(__file__).parent / "sample_table.pdf"
+    output_path = Path(__file__).parent.parent.parent / "data" / "sample_pdds" / "sample_table.pdf"
 
     doc = SimpleDocTemplate(
         str(output_path),
@@ -130,7 +130,8 @@ def generate_table_pdf():
 
 
 if __name__ == "__main__":
-    Path(__file__).parent.mkdir(parents=True, exist_ok=True)
+    output_dir = Path(__file__).parent.parent.parent / "data" / "sample_pdds"
+    output_dir.mkdir(parents=True, exist_ok=True)
     generate_simple_pdf()
     generate_table_pdf()
     print("All fixtures generated successfully!")

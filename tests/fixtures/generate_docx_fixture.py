@@ -8,7 +8,7 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 
 def generate_process_docx():
     """Generate sample_process.docx with realistic PDD content."""
-    output_path = Path(__file__).parent / "sample_process.docx"
+    output_path = Path(__file__).parent.parent.parent / "data" / "sample_pdds" / "sample_process.docx"
 
     doc = Document()
 
@@ -111,6 +111,7 @@ def generate_process_docx():
 
 
 if __name__ == "__main__":
-    Path(__file__).parent.mkdir(parents=True, exist_ok=True)
+    output_dir = Path(__file__).parent.parent.parent / "data" / "sample_pdds"
+    output_dir.mkdir(parents=True, exist_ok=True)
     generate_process_docx()
     print("DOCX fixture generated successfully!")

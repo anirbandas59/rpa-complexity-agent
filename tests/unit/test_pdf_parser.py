@@ -19,7 +19,7 @@ from core.exceptions import DocumentProcessingError
 @pytest.fixture
 def sample_simple_pdf() -> Path:
     """Path to sample_simple.pdf test fixture."""
-    path = Path(__file__).parent.parent / "fixtures" / "sample_simple.pdf"
+    path = Path(__file__).parent.parent.parent / "data" / "sample_pdds" / "sample_simple.pdf"
     assert path.exists(), f"Test fixture not found: {path}"
     return path
 
@@ -27,7 +27,7 @@ def sample_simple_pdf() -> Path:
 @pytest.fixture
 def sample_table_pdf() -> Path:
     """Path to sample_table.pdf test fixture."""
-    path = Path(__file__).parent.parent / "fixtures" / "sample_table.pdf"
+    path = Path(__file__).parent.parent.parent / "data" / "sample_pdds" / "sample_table.pdf"
     assert path.exists(), f"Test fixture not found: {path}"
     return path
 

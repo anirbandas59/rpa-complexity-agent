@@ -29,7 +29,7 @@ from tools.document.docx_parser import parse_docx
 @pytest.fixture
 def sample_simple_pdf() -> Path:
     """Path to sample_simple.pdf test fixture."""
-    path = Path(__file__).parent.parent / "fixtures" / "sample_simple.pdf"
+    path = Path(__file__).parent.parent.parent / "data" / "sample_pdds" / "sample_simple.pdf"
     assert path.exists()
     return path
 
@@ -37,7 +37,7 @@ def sample_simple_pdf() -> Path:
 @pytest.fixture
 def sample_process_docx() -> Path:
     """Path to sample_process.docx test fixture."""
-    path = Path(__file__).parent.parent / "fixtures" / "sample_process.docx"
+    path = Path(__file__).parent.parent.parent / "data" / "sample_pdds" / "sample_process.docx"
     assert path.exists()
     return path
 

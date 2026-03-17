@@ -820,7 +820,7 @@ class TestGroundTruth:
 @pytest.fixture
 def sample_process_docx() -> Path:
     """Path to sample_process.docx test fixture."""
-    path = Path(__file__).parent.parent / "fixtures" / "sample_process.docx"
+    path = Path(__file__).parent.parent.parent / "data" / "sample_pdds" / "sample_process.docx"
     if not path.exists():
         pytest.skip(f"Sample document not found at {path}")
     return path

@@ -21,7 +21,7 @@ from core.exceptions import DocumentProcessingError
 @pytest.fixture
 def sample_process_docx() -> Path:
     """Path to sample_process.docx test fixture."""
-    path = Path(__file__).parent.parent / "fixtures" / "sample_process.docx"
+    path = Path(__file__).parent.parent.parent / "data" / "sample_pdds" / "sample_process.docx"
     assert path.exists(), f"Test fixture not found: {path}"
     return path
 
