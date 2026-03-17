@@ -13,7 +13,7 @@ import logging
 from datetime import datetime
 from pathlib import Path
 
-from reportlab.lib.colors import HexColor, black, white
+from reportlab.lib.colors import Color, HexColor, black, white
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas as rl_canvas
 
@@ -31,18 +31,27 @@ logger = get_logger("pdf_reporter")
 # ===========================================================================
 
 PDF_COLORS = {
-    "XS": HexColor("#92D050"),      # Green
-    "S": HexColor("#70AD47"),       # Darker green
-    "M": HexColor("#FFC000"),       # Amber
-    "L": HexColor("#FF0000"),       # Red
-    "XL": HexColor("#7030A0"),      # Purple
-    "header": HexColor("#2E4057"),  # Dark navy
-    "subheader": HexColor("#5B9BD5"),  # Blue
-    "row_alt": HexColor("#F2F2F2"),  # Light grey
-    "border": HexColor("#BFBFBF"),   # Border grey
-    "text_dark": HexColor("#1F2937"),  # Near-black
-    "text_light": HexColor("#6B7280"),  # Grey
-    "accent": HexColor("#0EA5E9"),   # Accent blue
+    # FIX #3: Each tier now has a semantically correct color.
+    # XS/S = green (simple), M = amber (moderate), L = orange (complex), XL = red/purple (critical)
+    "XS": HexColor("#16a34a"),     # Green — simple
+    "S":  HexColor("#16a34a"),     # Green — simple
+    "M":  HexColor("#d97706"),     # Amber — moderate
+    "L":  HexColor("#ea580c"),     # Orange — complex (was pure red #FF0000)
+    "XL": HexColor("#dc2626"),     # Red — extra large / critical (was purple)
+    "header":    HexColor("#2E4057"),
+    "subheader": HexColor("#5B9BD5"),
+    "row_alt":   HexColor("#F2F2F2"),
+    "border":    HexColor("#BFBFBF"),
+    "text_dark": HexColor("#1F2937"),
+    "text_light": HexColor("#6B7280"),
+    "accent":    HexColor("#0EA5E9"),
+}
+
+# FIX #6: Status badge colors for the timeline table
+STATUS_COLORS = {
+    "COMPLETED":   HexColor("#16a34a"),  # Green
+    "IN PROGRESS": HexColor("#d97706"),  # Amber
+    "NOT STARTED": HexColor("#6B7280"),  # Grey — neutral, not alarming
 }
 
 PAGE_WIDTH, PAGE_HEIGHT = A4
@@ -52,15 +61,8 @@ PAGE_WIDTH, PAGE_HEIGHT = A4
 # ===========================================================================
 
 
-def _get_tier_color(tier: ComplexityTier) -> HexColor:
-    """Get color for a complexity tier.
-
-    Args:
-        tier: Complexity tier
-
-    Returns:
-        HexColor for the tier
-    """
+def _get_tier_color(tier: ComplexityTier) -> Color:
+    """Get color for a complexity tier."""
     return PDF_COLORS.get(tier.value, PDF_COLORS["M"])
 
 
@@ -77,10 +79,10 @@ def _tier_badge(
     Args:
         canvas: reportlab canvas
         tier: Complexity tier
-        x: X position
-        y: Y position
-        width: Badge width (default 80)
-        height: Badge height (default 28)
+        x: X position (left edge)
+        y: Y position (bottom edge, reportlab convention)
+        width: Badge width
+        height: Badge height
     """
     try:
         bg_color = _get_tier_color(tier)
@@ -88,31 +90,54 @@ def _tier_badge(
         canvas.setStrokeColor(bg_color)
         canvas.roundRect(x, y, width, height, radius=4, fill=1, stroke=0)
 
-        canvas.setFont("Helvetica-Bold", 14)
+        # FIX #1 (partial): Badge label font size scales with badge height.
+        # Small table badges (height=14) use 9pt to match column text.
+        # Large hero badge uses 24pt for prominence.
+        label_font_size = 9 if height <= 16 else (24 if height >= 40 else 14)
+        canvas.setFont("Helvetica-Bold", label_font_size)
         canvas.setFillColor(white)
-        canvas.drawCentredString(x + width / 2, y + height / 2 - 3, tier.value)
+        canvas.drawCentredString(x + width / 2, y + height / 2 - label_font_size * 0.3, tier.value)
     except Exception as e:
         logger.warning(f"Error drawing tier badge: {e}")
+
+
+def _status_badge(
+    canvas: rl_canvas.Canvas,
+    status: str,
+    x: float,
+    y: float,
+    width: float = 72,
+    height: float = 12,
+) -> None:
+    """FIX #6: Draw a colored status pill badge instead of plain text.
+
+    Args:
+        canvas: reportlab canvas
+        status: Status string (COMPLETED / IN PROGRESS / NOT STARTED)
+        x: X position (left edge)
+        y: Y position (bottom edge)
+        width: Badge width
+        height: Badge height
+    """
+    try:
+        bg_color = STATUS_COLORS.get(status, PDF_COLORS["text_light"])
+        canvas.setFillColor(bg_color)
+        canvas.roundRect(x, y, width, height, radius=3, fill=1, stroke=0)
+        canvas.setFont("Helvetica-Bold", 7)
+        canvas.setFillColor(white)
+        canvas.drawCentredString(x + width / 2, y + height / 2 - 2.5, status)
+    except Exception as e:
+        logger.warning(f"Error drawing status badge: {e}")
 
 
 def _horizontal_rule(
     canvas: rl_canvas.Canvas,
     y: float,
-    color: HexColor | None = None,
+    color: Color = PDF_COLORS["border"],
     thickness: float = 0.5,
 ) -> None:
-    """Draw a full-width horizontal line.
-
-    Args:
-        canvas: reportlab canvas
-        y: Y position
-        color: Line color (default border grey)
-        thickness: Line thickness in points
-    """
+    """Draw a full-width horizontal line."""
     try:
-        if color is None:
-            color = PDF_COLORS["border"]
-
         canvas.setStrokeColor(color)
         canvas.setLineWidth(thickness)
         canvas.line(40, y, PAGE_WIDTH - 40, y)
@@ -128,27 +153,16 @@ def _section_header(
 ) -> float:
     """Draw a section header with navy background bar.
 
-    Args:
-        canvas: reportlab canvas
-        text: Header text
-        y: Y position
-        font_size: Font size (default 11)
-
     Returns:
         Y position below the header bar
     """
     try:
         bar_height = font_size + 10
-
-        # Draw background bar
         canvas.setFillColor(PDF_COLORS["header"])
         canvas.rect(40, y - bar_height, PAGE_WIDTH - 80, bar_height, fill=1, stroke=0)
-
-        # Draw text
         canvas.setFont("Helvetica-Bold", font_size)
         canvas.setFillColor(white)
         canvas.drawString(48, y - font_size - 4, text)
-
         return y - bar_height - 8
     except Exception as e:
         logger.warning(f"Error drawing section header: {e}")
@@ -156,19 +170,10 @@ def _section_header(
 
 
 def _wrap_text(text: str, max_width: int = 80) -> list[str]:
-    """Wrap text to approximate line width.
-
-    Args:
-        text: Text to wrap
-        max_width: Max characters per line
-
-    Returns:
-        List of wrapped lines
-    """
+    """Wrap text to approximate line width."""
     lines = []
     for paragraph in text.split("\n"):
         while len(paragraph) > max_width:
-            # Find last space within max_width
             break_pos = max_width
             for i in range(max_width - 1, 0, -1):
                 if paragraph[i] == " ":
@@ -176,10 +181,8 @@ def _wrap_text(text: str, max_width: int = 80) -> list[str]:
                     break
             lines.append(paragraph[:break_pos].rstrip())
             paragraph = paragraph[break_pos:].lstrip()
-
         if paragraph:
             lines.append(paragraph)
-
     return lines
 
 
@@ -189,12 +192,7 @@ def _wrap_text(text: str, max_width: int = 80) -> list[str]:
 
 
 def _draw_page1(canvas: rl_canvas.Canvas, assessment_result: AssessmentResult) -> None:
-    """Draw Page 1 — Complexity Assessment Result.
-
-    Args:
-        canvas: reportlab canvas
-        assessment_result: Assessment result data
-    """
+    """Draw Page 1 — Complexity Assessment Result."""
     try:
         # TOP HEADER
         y = PAGE_HEIGHT - 50
@@ -218,7 +216,6 @@ def _draw_page1(canvas: rl_canvas.Canvas, assessment_result: AssessmentResult) -
         canvas.setFont("Helvetica", 8)
         canvas.setFillColor(PDF_COLORS["text_light"])
 
-        # Left column
         x_left = 50
         canvas.drawString(x_left, info_y, "Project:")
         canvas.setFont("Helvetica-Bold", 8)
@@ -252,7 +249,13 @@ def _draw_page1(canvas: rl_canvas.Canvas, assessment_result: AssessmentResult) -
         canvas.drawString(x_right, info_y_right, "Session ID:")
         canvas.setFont("Helvetica-Bold", 8)
         canvas.setFillColor(PDF_COLORS["text_dark"])
-        session_short = assessment_result.session_id[:12] + "..." if len(assessment_result.session_id) > 12 else assessment_result.session_id
+        # Available column: page right margin (555pt) minus text start (x_right+65 ≈ 373pt)
+        # = ~182pt at 8pt font ≈ 26 chars safely. Truncate only beyond that.
+        session_short = (
+            assessment_result.session_id[:26] + "..."
+            if len(assessment_result.session_id) > 26
+            else assessment_result.session_id
+        )
         canvas.drawString(x_right + 65, info_y_right, session_short)
 
         info_y_right -= 12
@@ -267,12 +270,15 @@ def _draw_page1(canvas: rl_canvas.Canvas, assessment_result: AssessmentResult) -
 
         # COMPLEXITY RESULT
         y = _section_header(canvas, "COMPLEXITY CLASSIFICATION", y)
-        y -= 15
+        y -= 20
 
-        # Draw tier badge centered
-        badge_x = PAGE_WIDTH / 2 - 40
-        _tier_badge(canvas, assessment_result.complexity_tier, badge_x, y - 28)
-        y -= 50
+        # FIX #2: Much larger hero badge — was 80×28, now 120×48 with 24pt font.
+        # Centered on page, clearly the primary output of the report.
+        badge_width = 120
+        badge_height = 48
+        badge_x = PAGE_WIDTH / 2 - badge_width / 2
+        _tier_badge(canvas, assessment_result.complexity_tier, badge_x, y - badge_height, width=badge_width, height=badge_height)
+        y -= badge_height + 16
 
         # Score and confidence
         canvas.setFont("Helvetica-Bold", 13)
@@ -284,7 +290,11 @@ def _draw_page1(canvas: rl_canvas.Canvas, assessment_result: AssessmentResult) -
         confidence_pct = int(assessment_result.confidence_score * 100)
         canvas.setFont("Helvetica", 10)
         canvas.setFillColor(PDF_COLORS["text_light"])
-        conf_text = f"Confidence: {confidence_pct}% | High Confidence" if confidence_pct >= 80 else f"Confidence: {confidence_pct}%"
+        conf_text = (
+            f"Confidence: {confidence_pct}% | High Confidence"
+            if confidence_pct >= 80
+            else f"Confidence: {confidence_pct}%"
+        )
         canvas.drawCentredString(PAGE_WIDTH / 2, y, conf_text)
 
         y -= 50
@@ -293,62 +303,75 @@ def _draw_page1(canvas: rl_canvas.Canvas, assessment_result: AssessmentResult) -
         y = _section_header(canvas, "ATTRIBUTE SCORE BREAKDOWN", y)
         y -= 20
 
-        # Table headers with better column proportions
-        canvas.setFont("Helvetica-Bold", 9)
+        # Column header bar
         canvas.setFillColor(PDF_COLORS["header"])
         canvas.rect(40, y - 16, PAGE_WIDTH - 80, 16, fill=1, stroke=0)
 
+        canvas.setFont("Helvetica-Bold", 9)
         canvas.setFillColor(white)
-        # Optimized column positions (left margin 50, right margin 40)
         col_x = [50, 165, 225, 275, 330]
-        col_widths = [115, 60, 50, 55, 155]
         headers = ["Attribute", "Raw Value", "Tier", "Weight", "Rationale"]
         for i, header in enumerate(headers):
             canvas.drawString(col_x[i], y - 13, header)
 
         y -= 22
 
-        # Rows
-        canvas.setFont("Helvetica", 9)
+        # FIX #8: Draw ALL row backgrounds first, then draw ALL text on top.
+        # Original code interleaved bg rect + text per row, causing rects to
+        # overwrite the previous row's text on alternating rows.
         row_height = 20
-        for idx, score in enumerate(assessment_result.attribute_scores):
-            # Alternating background
+        rows_data = list(enumerate(assessment_result.attribute_scores))
+
+        # Pass 1: backgrounds only
+        bg_y = y
+        for idx, score in rows_data:
             if idx % 2 == 1:
                 canvas.setFillColor(PDF_COLORS["row_alt"])
-                canvas.rect(40, y - row_height, PAGE_WIDTH - 80, row_height, fill=1, stroke=0)
+                canvas.rect(40, bg_y - row_height, PAGE_WIDTH - 80, row_height, fill=1, stroke=0)
+            bg_y -= row_height
 
-            canvas.setFillColor(PDF_COLORS["text_dark"])
-            # Truncate attribute name if too long
-            attr_name = score.attribute_name[:15]
-            canvas.drawString(col_x[0], y - 13, attr_name)
-            canvas.drawString(col_x[1], y - 13, str(score.raw_value))
-
-            # Small tier badge
-            _tier_badge(canvas, score.selected_tier, col_x[2] - 10, y - row_height + 2, width=40, height=14)
-
-            # Reset fill color after badge
-            canvas.setFillColor(PDF_COLORS["text_dark"])
-            canvas.drawString(col_x[3], y - 13, str(score.weight))
-
-            # Truncate rationale to fit column
-            rationale = score.tier_rationale[:28]
-            if len(score.tier_rationale) > 28:
-                rationale += "..."
-            canvas.drawString(col_x[4], y - 13, rationale)
-
-            y -= row_height
-
-        # Totals row
+        # Totals row background
         canvas.setFillColor(PDF_COLORS["row_alt"])
-        canvas.rect(40, y - row_height, PAGE_WIDTH - 80, row_height, fill=1, stroke=0)
+        canvas.rect(40, bg_y - row_height, PAGE_WIDTH - 80, row_height, fill=1, stroke=0)
+
+        # Pass 2: content (badges + text) drawn on top of all backgrounds
+        # FIX #1: Table row font is 9pt regular — matches header font size.
+        canvas.setFont("Helvetica", 9)
+        text_y = y
+        for idx, score in rows_data:
+            canvas.setFillColor(PDF_COLORS["text_dark"])
+
+            # FIX #4: Rationale column — use a wider truncation limit (38 chars)
+            # to use the full available column width without overflow.
+            attr_name = score.attribute_name[:15]
+            canvas.drawString(col_x[0], text_y - 13, attr_name)
+            canvas.drawString(col_x[1], text_y - 13, str(score.raw_value))
+
+            # Small tier badge (height=14 → 9pt label via _tier_badge logic)
+            _tier_badge(canvas, score.selected_tier, col_x[2] - 10, text_y - row_height + 3, width=40, height=14)
+
+            canvas.setFillColor(PDF_COLORS["text_dark"])
+            canvas.setFont("Helvetica", 9)
+            canvas.drawString(col_x[3], text_y - 13, str(score.weight))
+
+            # FIX #4: Wider rationale — 38 chars uses the full 155pt column
+            rationale = score.tier_rationale[:38]
+            if len(score.tier_rationale) > 38:
+                rationale += "..."
+            canvas.drawString(col_x[4], text_y - 13, rationale)
+
+            text_y -= row_height
+
+        # Totals row text
         canvas.setFont("Helvetica-Bold", 9)
         canvas.setFillColor(PDF_COLORS["text_dark"])
-        canvas.drawString(col_x[0], y - 13, "TOTAL SCORE")
-        _tier_badge(canvas, assessment_result.complexity_tier, col_x[2] - 10, y - row_height + 2, width=40, height=14)
+        canvas.drawString(col_x[0], text_y - 13, "TOTAL SCORE")
+        _tier_badge(canvas, assessment_result.complexity_tier, col_x[2] - 10, text_y - row_height + 3, width=40, height=14)
         canvas.setFillColor(PDF_COLORS["text_dark"])
-        canvas.drawString(col_x[3], y - 13, str(assessment_result.total_score))
+        canvas.setFont("Helvetica-Bold", 9)
+        canvas.drawString(col_x[3], text_y - 13, str(assessment_result.total_score))
 
-        y -= row_height + 10
+        y = text_y - row_height - 10
 
         # REASONING NARRATIVE
         y = _section_header(canvas, "ASSESSMENT REASONING", y)
@@ -356,9 +379,8 @@ def _draw_page1(canvas: rl_canvas.Canvas, assessment_result: AssessmentResult) -
 
         canvas.setFont("Helvetica", 9)
         canvas.setFillColor(PDF_COLORS["text_dark"])
-
         wrapped = _wrap_text(assessment_result.reasoning, max_width=80)
-        for line in wrapped[:8]:  # Limit to 8 lines
+        for line in wrapped[:8]:
             canvas.drawString(50, y, line)
             y -= 12
 
@@ -380,7 +402,7 @@ def _draw_page1(canvas: rl_canvas.Canvas, assessment_result: AssessmentResult) -
 
                 canvas.setFont("Helvetica-Bold", 10)
                 canvas.setFillColor(PDF_COLORS["L"])
-                canvas.drawString(50, y - 12, "⚠ Tech Lead Review Required")
+                canvas.drawString(50, y - 12, "Tech Lead Review Required")
 
                 canvas.setFont("Helvetica", 8)
                 canvas.setFillColor(PDF_COLORS["text_dark"])
@@ -413,13 +435,7 @@ def _draw_page2(
     assessment_result: AssessmentResult,
     timeline: DeliveryTimeline,
 ) -> None:
-    """Draw Page 2 — Effort Estimate & Delivery Timeline.
-
-    Args:
-        canvas: reportlab canvas
-        assessment_result: Assessment result data
-        timeline: Delivery timeline data
-    """
+    """Draw Page 2 — Effort Estimate & Delivery Timeline."""
     try:
         # HEADER
         y = PAGE_HEIGHT - 50
@@ -436,14 +452,13 @@ def _draw_page2(
         y = _section_header(canvas, "EFFORT ESTIMATE BY PHASE", y)
         y -= 20
 
-        # Calculate effort
         effort = calculate_effort(assessment_result.complexity_tier, assessment_result.rpa_tool)
 
-        # Table headers
-        canvas.setFont("Helvetica-Bold", 9)
+        # Column header bar
         canvas.setFillColor(PDF_COLORS["header"])
         canvas.rect(40, y - 16, PAGE_WIDTH - 80, 16, fill=1, stroke=0)
 
+        canvas.setFont("Helvetica-Bold", 9)
         canvas.setFillColor(white)
         canvas.drawString(50, y - 13, "Phase")
         canvas.drawString(200, y - 13, "Days")
@@ -451,8 +466,7 @@ def _draw_page2(
 
         y -= 22
 
-        # Phase rows
-        canvas.setFont("Helvetica", 9)
+        # FIX #8 (page 2): Same two-pass pattern — backgrounds first, text second.
         row_height = 17
         phase_labels = ["Define", "Build", "UAT", "Deploy"]
         phase_notes = [
@@ -462,32 +476,40 @@ def _draw_page2(
             "Production deployment",
         ]
 
-        for idx, (phase_effort, label, note) in enumerate(zip(effort.phases, phase_labels, phase_notes)):
-            # Alternating background
+        # Pass 1: backgrounds
+        bg_y = y
+        for idx in range(len(phase_labels)):
             if idx % 2 == 1:
                 canvas.setFillColor(PDF_COLORS["row_alt"])
-                canvas.rect(40, y - row_height, PAGE_WIDTH - 80, row_height, fill=1, stroke=0)
+                canvas.rect(40, bg_y - row_height, PAGE_WIDTH - 80, row_height, fill=1, stroke=0)
+            bg_y -= row_height
 
-            canvas.setFillColor(PDF_COLORS["text_dark"])
-            canvas.drawString(50, y - 12, label)
-            canvas.drawString(200, y - 12, phase_effort.days_display)
-            canvas.drawString(290, y - 12, note)
-
-            y -= row_height
-
-        # Totals row
+        # Totals row background
         canvas.setFillColor(PDF_COLORS["row_alt"])
-        canvas.rect(40, y - row_height, PAGE_WIDTH - 80, row_height, fill=1, stroke=0)
+        canvas.rect(40, bg_y - row_height, PAGE_WIDTH - 80, row_height, fill=1, stroke=0)
 
+        # Pass 2: text
+        canvas.setFont("Helvetica", 9)
+        text_y = y
+        for phase_effort, label, note in zip(effort.phases, phase_labels, phase_notes):
+            canvas.setFillColor(PDF_COLORS["text_dark"])
+            canvas.drawString(50, text_y - 12, label)
+            canvas.drawString(200, text_y - 12, phase_effort.days_display)
+            canvas.drawString(290, text_y - 12, note)
+            text_y -= row_height
+
+        # Totals row text
         canvas.setFont("Helvetica-Bold", 9)
         canvas.setFillColor(PDF_COLORS["text_dark"])
-        canvas.drawString(50, y - 12, "TOTAL")
-        canvas.drawString(200, y - 12, effort.total_days_display)
-        canvas.drawString(290, y - 12, f"({effort.sprint_display})")
+        canvas.drawString(50, text_y - 12, "TOTAL")
+        canvas.drawString(200, text_y - 12, effort.total_days_display)
+        canvas.drawString(290, text_y - 12, f"({effort.sprint_display})")
 
-        y -= row_height + 15
+        y = text_y - row_height + 5
 
-        # Adjustment note if applied
+        y -= 15
+
+        # Adjustment note
         if effort.adjustment_applied:
             canvas.setFont("Helvetica-Oblique", 8)
             canvas.setFillColor(PDF_COLORS["text_light"])
@@ -502,9 +524,14 @@ def _draw_page2(
 
         # DELIVERY TIMELINE TABLE
         y = _section_header(canvas, "FEATURE DELIVERY TIMELINE", y)
-        y -= 15
+        y -= 8
 
-        # Project meta
+        # FIX #7: Developer meta line now sits inside a light background strip
+        # so it reads as a sub-header attached to the table, not floating text.
+        meta_strip_height = 18
+        canvas.setFillColor(HexColor("#EBF5FB"))
+        canvas.rect(40, y - meta_strip_height, PAGE_WIDTH - 80, meta_strip_height, fill=1, stroke=0)
+
         canvas.setFont("Helvetica", 9)
         canvas.setFillColor(PDF_COLORS["text_dark"])
         meta_text = (
@@ -512,16 +539,15 @@ def _draw_page2(
             f"Total Hours: {timeline.total_hours:.0f}h  |  "
             f"Total SP: {timeline.total_sp:.2f}"
         )
-        canvas.drawString(50, y, meta_text)
-        y -= 18
+        canvas.drawString(50, y - 13, meta_text)
+        y -= meta_strip_height + 6
 
-        # Table headers
-        canvas.setFont("Helvetica-Bold", 9)
+        # Feature table header bar
         canvas.setFillColor(PDF_COLORS["header"])
         canvas.rect(40, y - 15, PAGE_WIDTH - 80, 15, fill=1, stroke=0)
 
+        canvas.setFont("Helvetica-Bold", 9)
         canvas.setFillColor(white)
-        # Optimized timeline columns
         timeline_col_x = [50, 185, 255, 320, 375, 430]
         timeline_headers = ["Feature", "Start", "End", "Hours", "SP", "Status"]
         for i, header in enumerate(timeline_headers):
@@ -529,50 +555,46 @@ def _draw_page2(
 
         y -= 19
 
-        # Feature rows
-        canvas.setFont("Helvetica", 8.5)
+        # FIX #8 (feature rows): two-pass — backgrounds first, content second.
         row_height = 16
         max_features = 15
+        features_to_draw = timeline.features[:max_features]
 
-        for idx, feature in enumerate(timeline.features[:max_features]):
-            # Alternating background
+        # Pass 1: backgrounds
+        bg_y = y
+        for idx in range(len(features_to_draw)):
             if idx % 2 == 1:
                 canvas.setFillColor(PDF_COLORS["row_alt"])
-                canvas.rect(40, y - row_height, PAGE_WIDTH - 80, row_height, fill=1, stroke=0)
+                canvas.rect(40, bg_y - row_height, PAGE_WIDTH - 80, row_height, fill=1, stroke=0)
+            bg_y -= row_height
+            if bg_y < 120:
+                break
 
+        # Pass 2: text + status badges
+        canvas.setFont("Helvetica", 8.5)
+        text_y = y
+        for idx, feature in enumerate(features_to_draw):
             canvas.setFillColor(PDF_COLORS["text_dark"])
 
-            # Feature name (truncate to fit)
             feature_name = feature.name[:20]
             if len(feature.name) > 20:
                 feature_name += "..."
-            canvas.drawString(timeline_col_x[0], y - 11, feature_name)
+            canvas.drawString(timeline_col_x[0], text_y - 11, feature_name)
+            canvas.drawString(timeline_col_x[1], text_y - 11, str(feature.start_date))
+            canvas.drawString(timeline_col_x[2], text_y - 11, str(feature.end_date))
+            canvas.drawString(timeline_col_x[3], text_y - 11, f"{feature.hours:.0f}")
+            canvas.drawString(timeline_col_x[4], text_y - 11, f"{feature.sp:.2f}")
 
-            # Dates
-            canvas.drawString(timeline_col_x[1], y - 11, str(feature.start_date))
-            canvas.drawString(timeline_col_x[2], y - 11, str(feature.end_date))
-
-            # Hours and SP
-            canvas.drawString(timeline_col_x[3], y - 11, f"{feature.hours:.0f}")
-            canvas.drawString(timeline_col_x[4], y - 11, f"{feature.sp:.2f}")
-
-            # Status with color
+            # FIX #6: Status is now a colored pill badge, not plain text
             status = feature.development_status
-            if status == "COMPLETED":
-                canvas.setFillColor(PDF_COLORS["S"])
-            elif status == "IN PROGRESS":
-                canvas.setFillColor(PDF_COLORS["M"])
-            else:
-                canvas.setFillColor(PDF_COLORS["text_dark"])
+            _status_badge(canvas, status, timeline_col_x[5], text_y - row_height + 2, width=72, height=12)
 
-            canvas.drawString(timeline_col_x[5], y - 11, status)
-
-            y -= row_height
-
-            if y < 120:  # Stop if running low on space
+            text_y -= row_height
+            if text_y < 120:
                 break
 
-        # "More features" note
+        y = text_y
+
         if len(timeline.features) > max_features:
             canvas.setFont("Helvetica-Oblique", 7)
             canvas.setFillColor(PDF_COLORS["text_light"])
@@ -582,16 +604,28 @@ def _draw_page2(
                 f"(+{len(timeline.features) - max_features} more features — see Excel report for full list)",
             )
 
-        y = 65
+        # PAGE FOOTER — drawn first so the safe zone boundary is established.
+        # Rule at y=50, text at y=35. Summary box must sit entirely above y=50.
+        _horizontal_rule(canvas, 50)
+        canvas.setFont("Helvetica", 8)
+        canvas.setFillColor(PDF_COLORS["text_light"])
+        canvas.drawCentredString(
+            PAGE_WIDTH / 2,
+            35,
+            "Page 2 of 2  |  RPA Complexity Assessment Agent  |  Powered by IBM watsonx",
+        )
 
-        # SUMMARY FOOTER BOX
+        # SUMMARY BOX — top at y=105, box is 45pt tall, bottom edge at y=60.
+        # Leaves a clean 10pt gap above the footer rule at y=50.
+        summary_top = 105
         try:
-            canvas.setFillColor(PDF_COLORS["subheader"])
-            canvas.rect(40, y - 45, PAGE_WIDTH - 80, 45, fill=0, stroke=1)
+            canvas.setStrokeColor(PDF_COLORS["subheader"])
+            canvas.setLineWidth(1)
+            canvas.rect(40, summary_top - 45, PAGE_WIDTH - 80, 45, fill=0, stroke=1)
 
             canvas.setFont("Helvetica-Bold", 10)
             canvas.setFillColor(PDF_COLORS["header"])
-            canvas.drawString(50, y - 12, "Assessment Summary")
+            canvas.drawString(50, summary_top - 16, "Assessment Summary")
 
             canvas.setFont("Helvetica", 8)
             canvas.setFillColor(PDF_COLORS["text_dark"])
@@ -601,20 +635,9 @@ def _draw_page2(
                 f"Effort: {effort.total_days_display}  |  "
                 f"Sprints: {effort.sprint_display}"
             )
-            canvas.drawString(50, y - 25, summary)
+            canvas.drawString(50, summary_top - 32, summary)
         except Exception as e:
             logger.warning(f"Error drawing summary box: {e}")
-
-        # PAGE FOOTER
-        y = 30
-        _horizontal_rule(canvas, y + 10)
-        canvas.setFont("Helvetica", 8)
-        canvas.setFillColor(PDF_COLORS["text_light"])
-        canvas.drawCentredString(
-            PAGE_WIDTH / 2,
-            y,
-            "Page 2 of 2  |  RPA Complexity Assessment Agent  |  Powered by IBM watsonx",
-        )
 
     except Exception as e:
         logger.error(f"Error rendering page 2: {e}")
@@ -672,15 +695,11 @@ def generate_pdf_report(
 
         # Step 6: Verify file exists and is non-empty
         if not output_path_obj.exists():
-            raise OutputGenerationError(
-                "PDF generation failed — file was not created"
-            )
+            raise OutputGenerationError("PDF generation failed — file was not created")
 
         file_size = output_path_obj.stat().st_size
         if file_size == 0:
-            raise OutputGenerationError(
-                "PDF generation produced empty file"
-            )
+            raise OutputGenerationError("PDF generation produced empty file")
 
         # Step 7: Log and return
         log_msg = f"PDF report generated: {output_path} ({file_size:,} bytes)"
