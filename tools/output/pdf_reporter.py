@@ -305,8 +305,8 @@ def _draw_page1(canvas: rl_canvas.Canvas, assessment_result: AssessmentResult) -
         y -= 22
 
         # Rows
-        canvas.setFont("Helvetica", 8)
-        row_height = 18
+        canvas.setFont("Helvetica", 9)
+        row_height = 20
         for idx, score in enumerate(assessment_result.attribute_scores):
             # Alternating background
             if idx % 2 == 1:
@@ -314,30 +314,33 @@ def _draw_page1(canvas: rl_canvas.Canvas, assessment_result: AssessmentResult) -
                 canvas.rect(40, y - row_height, PAGE_WIDTH - 80, row_height, fill=1, stroke=0)
 
             canvas.setFillColor(PDF_COLORS["text_dark"])
-            canvas.drawString(col_x[0], y - 12, score.attribute_name)
-            canvas.drawString(col_x[1], y - 12, str(score.raw_value))
+            canvas.drawString(col_x[0], y - 13, score.attribute_name)
+            canvas.drawString(col_x[1], y - 13, str(score.raw_value))
 
             # Small tier badge
             _tier_badge(canvas, score.selected_tier, col_x[2] - 5, y - row_height + 2, width=45, height=14)
 
-            canvas.drawString(col_x[3], y - 12, str(score.weight))
+            # Reset fill color after badge
+            canvas.setFillColor(PDF_COLORS["text_dark"])
+            canvas.drawString(col_x[3], y - 13, str(score.weight))
 
             # Truncate rationale
             rationale = score.tier_rationale[:35]
             if len(score.tier_rationale) > 35:
                 rationale += "..."
-            canvas.drawString(col_x[4], y - 12, rationale)
+            canvas.drawString(col_x[4], y - 13, rationale)
 
             y -= row_height
 
         # Totals row
         canvas.setFillColor(PDF_COLORS["row_alt"])
         canvas.rect(40, y - row_height, PAGE_WIDTH - 80, row_height, fill=1, stroke=0)
-        canvas.setFont("Helvetica-Bold", 8)
+        canvas.setFont("Helvetica-Bold", 9)
         canvas.setFillColor(PDF_COLORS["text_dark"])
-        canvas.drawString(col_x[0], y - 12, "TOTAL SCORE")
+        canvas.drawString(col_x[0], y - 13, "TOTAL SCORE")
         _tier_badge(canvas, assessment_result.complexity_tier, col_x[2] - 5, y - row_height + 2, width=45, height=14)
-        canvas.drawString(col_x[3], y - 12, str(assessment_result.total_score))
+        canvas.setFillColor(PDF_COLORS["text_dark"])
+        canvas.drawString(col_x[3], y - 13, str(assessment_result.total_score))
 
         y -= row_height + 10
 
@@ -443,8 +446,8 @@ def _draw_page2(
         y -= 22
 
         # Phase rows
-        canvas.setFont("Helvetica", 8)
-        row_height = 15
+        canvas.setFont("Helvetica", 9)
+        row_height = 17
         phase_labels = ["Define", "Build", "UAT", "Deploy"]
         phase_notes = [
             "BA + Developer effort",
@@ -460,9 +463,9 @@ def _draw_page2(
                 canvas.rect(40, y - row_height, PAGE_WIDTH - 80, row_height, fill=1, stroke=0)
 
             canvas.setFillColor(PDF_COLORS["text_dark"])
-            canvas.drawString(50, y - 11, label)
-            canvas.drawString(200, y - 11, phase_effort.days_display)
-            canvas.drawString(290, y - 11, note)
+            canvas.drawString(50, y - 12, label)
+            canvas.drawString(200, y - 12, phase_effort.days_display)
+            canvas.drawString(290, y - 12, note)
 
             y -= row_height
 
@@ -470,11 +473,11 @@ def _draw_page2(
         canvas.setFillColor(PDF_COLORS["row_alt"])
         canvas.rect(40, y - row_height, PAGE_WIDTH - 80, row_height, fill=1, stroke=0)
 
-        canvas.setFont("Helvetica-Bold", 8)
+        canvas.setFont("Helvetica-Bold", 9)
         canvas.setFillColor(PDF_COLORS["text_dark"])
-        canvas.drawString(50, y - 11, "TOTAL")
-        canvas.drawString(200, y - 11, effort.total_days_display)
-        canvas.drawString(290, y - 11, f"({effort.sprint_display})")
+        canvas.drawString(50, y - 12, "TOTAL")
+        canvas.drawString(200, y - 12, effort.total_days_display)
+        canvas.drawString(290, y - 12, f"({effort.sprint_display})")
 
         y -= row_height + 15
 
@@ -496,7 +499,7 @@ def _draw_page2(
         y -= 15
 
         # Project meta
-        canvas.setFont("Helvetica", 8)
+        canvas.setFont("Helvetica", 9)
         canvas.setFillColor(PDF_COLORS["text_dark"])
         meta_text = (
             f"Developer: {timeline.developer}  |  "
@@ -507,9 +510,9 @@ def _draw_page2(
         y -= 18
 
         # Table headers
-        canvas.setFont("Helvetica-Bold", 8)
+        canvas.setFont("Helvetica-Bold", 9)
         canvas.setFillColor(PDF_COLORS["header"])
-        canvas.rect(40, y - 14, PAGE_WIDTH - 80, 14, fill=1, stroke=0)
+        canvas.rect(40, y - 15, PAGE_WIDTH - 80, 15, fill=1, stroke=0)
 
         canvas.setFillColor(white)
         canvas.drawString(50, y - 11, "Feature")
@@ -519,11 +522,11 @@ def _draw_page2(
         canvas.drawString(410, y - 11, "SP")
         canvas.drawString(450, y - 11, "Status")
 
-        y -= 18
+        y -= 19
 
         # Feature rows
-        canvas.setFont("Helvetica", 7.5)
-        row_height = 14
+        canvas.setFont("Helvetica", 8.5)
+        row_height = 16
         max_features = 15
 
         for idx, feature in enumerate(timeline.features[:max_features]):
@@ -538,15 +541,15 @@ def _draw_page2(
             feature_name = feature.name[:30]
             if len(feature.name) > 30:
                 feature_name += "..."
-            canvas.drawString(50, y - 10, feature_name)
+            canvas.drawString(50, y - 11, feature_name)
 
             # Dates
-            canvas.drawString(225, y - 10, str(feature.start_date))
-            canvas.drawString(295, y - 10, str(feature.end_date))
+            canvas.drawString(225, y - 11, str(feature.start_date))
+            canvas.drawString(295, y - 11, str(feature.end_date))
 
             # Hours and SP
-            canvas.drawString(360, y - 10, f"{feature.hours:.0f}")
-            canvas.drawString(410, y - 10, f"{feature.sp:.2f}")
+            canvas.drawString(360, y - 11, f"{feature.hours:.0f}")
+            canvas.drawString(410, y - 11, f"{feature.sp:.2f}")
 
             # Status with color
             status = feature.development_status
@@ -555,9 +558,9 @@ def _draw_page2(
             elif status == "IN PROGRESS":
                 canvas.setFillColor(PDF_COLORS["M"])
             else:
-                canvas.setFillColor(PDF_COLORS["text_light"])
+                canvas.setFillColor(PDF_COLORS["text_dark"])
 
-            canvas.drawString(450, y - 10, status)
+            canvas.drawString(450, y - 11, status)
 
             y -= row_height
 
