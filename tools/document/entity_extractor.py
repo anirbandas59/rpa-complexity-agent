@@ -11,15 +11,13 @@ All LLM access via llm.manager.LLMManager abstraction.
 
 from __future__ import annotations
 
-import logging
 import re
-from typing import Any
 
 from pydantic import BaseModel, Field
 
 from config.logging_config import get_logger
 from core.constants import RPATool
-from core.exceptions import DocumentProcessingError, LLMProviderError
+from core.exceptions import LLMProviderError
 from core.models.document import ExtractedSection
 from llm.manager import LLMManager
 from tools.document.prompts import (
@@ -93,7 +91,9 @@ class EntityExtractionResponse(BaseModel):
 # ==================== HELPER FUNCTIONS ====================
 
 
-def _prepare_sections_text(sections: list[ExtractedSection], max_chars: int = 6000) -> str:
+def _prepare_sections_text(
+    sections: list[ExtractedSection], max_chars: int = 6000
+) -> str:
     """Format sections for LLM prompt.
 
     For each section:
@@ -226,15 +226,16 @@ def extract_entities(
         llm_manager = LLMManager.create_default()
 
     # STEP 4: First attempt
-    result = None
+    result: EntityExtractionResponse | None = None
     try:
-        result = llm_manager.complete_structured(
+        response = llm_manager.complete_structured(
             prompt=prompt,
             response_schema=EntityExtractionResponse,
             system=ENTITY_EXTRACTION_SYSTEM,
             max_tokens=1500,
             session_id="entity_extractor",
         )
+        result = response if isinstance(response, EntityExtractionResponse) else None
     except LLMProviderError as e:
         logger.warning(f"Entity extraction failed on first attempt, retrying: {e}")
         # Go to Step 5 (retry)
@@ -247,18 +248,22 @@ def extract_entities(
             retry_prompt = ENTITY_EXTRACTION_RETRY_PROMPT.format(
                 sections_text_truncated=truncated
             )
-            result = llm_manager.complete_structured(
+            response = llm_manager.complete_structured(
                 prompt=retry_prompt,
                 response_schema=EntityExtractionResponse,
                 system=ENTITY_EXTRACTION_SYSTEM,
                 max_tokens=1000,
                 session_id="entity_extractor_retry",
             )
+            result = response if isinstance(response, EntityExtractionResponse) else None
         except LLMProviderError as e:
             logger.error(f"Entity extraction failed after retry: {e}")
             return EntityExtractionResponse()
 
-    # STEP 6: Post-process result
+        if result is None:
+            return EntityExtractionResponse()
+
+    # STEP 6: Post-process result (result guaranteed not None here)
     # a) Deduplicate applications
     result.applications = _deduplicate_applications(result.applications)
 

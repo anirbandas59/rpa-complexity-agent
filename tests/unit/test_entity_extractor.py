@@ -12,8 +12,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from core.constants import RPATool
-from core.models.document import ExtractedSection, ParsedDocument
+from core.models.document import ExtractedSection
 from llm.manager import LLMManager
+from tools.document.docx_parser import parse_docx
 from tools.document.entity_extractor import (
     ApplicationEntity,
     ConfidenceScores,
@@ -24,9 +25,7 @@ from tools.document.entity_extractor import (
     get_application_count,
     get_technology_count,
 )
-from tools.document.docx_parser import parse_docx
 from tools.document.section_identifier import identify_sections
-
 
 # ==================== FIXTURES ====================
 
@@ -45,21 +44,29 @@ def mock_sections() -> list[ExtractedSection]:
     return [
         ExtractedSection(
             title="Process Overview",
-            content="This process uses SAP ECC and Microsoft Excel to automate purchase orders.",
+            content=(
+                "This process uses SAP ECC and Microsoft Excel "
+                "to automate purchase orders."
+            ),
             section_type="process_overview",
             confidence_score=0.9,
             page_number=1,
         ),
         ExtractedSection(
             title="Applications",
-            content="The bot interacts with SAP (MM module), Excel, and Outlook for email notifications.",
+            content=(
+                "The bot interacts with SAP (MM module), Excel, "
+                "and Outlook for email notifications."
+            ),
             section_type="applications",
             confidence_score=0.85,
             page_number=2,
         ),
         ExtractedSection(
             title="Technology Stack",
-            content="Uses API calls to a custom REST API and VBA macros in Excel.",
+            content=(
+                "Uses API calls to a custom REST API and VBA macros in Excel."
+            ),
             section_type="general",
             confidence_score=0.7,
             page_number=2,
@@ -559,7 +566,7 @@ def test_integration_entity_extraction_from_real_docx(sample_process_docx: Path)
         print(f"  - {tech.name} ({tech.category}): {tech.notes}")
     print(f"File Types: {result.file_types}")
     print(f"SAP Tcodes: {result.sap_tcodes}")
-    print(f"Process Triggers:")
+    print("Process Triggers:")
     for trigger in result.process_triggers:
         print(f"  - {trigger.type}: {trigger.description}")
     print(f"Roles: {result.roles}")
