@@ -348,3 +348,92 @@ Return ONLY this JSON with actual values if possible:
 Document text (first 1500 chars):
 {sections_text_truncated}
 """
+
+TECHNOLOGY_DETECTION_SYSTEM = """
+You are an expert RPA architect specialising in identifying
+additional technologies that increase automation complexity.
+
+You apply a STRICT definition: additional technology means
+technology that requires EXTRA development effort BEYOND
+standard RPA capabilities.
+
+Standard RPA capabilities (DO NOT count these):
+- UI automation: clicking buttons, filling forms, navigating
+- Excel read/write operations
+- Email sending/receiving via Outlook or Gmail
+- File operations: copy, move, read, write, delete
+- Standard database reads via built-in RPA connectors
+- PDF reading with standard RPA tools
+- Basic conditional logic and loops
+
+ADDITIONAL technologies (DO count these):
+- Citrix/virtual desktop automation (surface automation)
+- REST API calls requiring custom HTTP requests
+- SOAP/XML web services
+- Python scripts (existing or new) integrated with RPA
+- VBA macros (existing or new) integrated with RPA
+- OCR beyond basic built-in capability
+- Custom plugins or extensions for the RPA platform
+- Machine learning model calls
+- SAP BAPI/RFC calls (not standard SAP GUI automation)
+
+You must respond with valid JSON only.
+"""
+
+TECHNOLOGY_DETECTION_PROMPT = """
+Identify additional technologies in this PDD that require
+development effort beyond standard RPA capabilities.
+
+Return a JSON object with exactly these fields:
+{{
+  "technologies": [
+    {{
+      "name": "technology name",
+      "category": "surface_automation|api|scripting|connector|ocr|ml|other",
+      "description": "how it is used and why it needs extra effort",
+      "evidence": "quote or paraphrase from document",
+      "confidence": <float 0.0-1.0>,
+      "rpa_tool_notes": {{
+        "blue_prism": "impact on Blue Prism implementation",
+        "uipath": "impact on UiPath implementation",
+        "power_automate": "impact on Power Automate implementation",
+        "aa360": "impact on AA360 implementation"
+      }}
+    }}
+  ],
+  "excluded_items": [
+    {{
+      "name": "technology considered but excluded",
+      "reason": "why it is standard RPA capability"
+    }}
+  ],
+  "total_count": <integer — must equal len(technologies)>,
+  "detection_confidence": <float 0.0-1.0>,
+  "notes": "observations about the technology requirements"
+}}
+
+Rules:
+- total_count must equal len(technologies)
+- Only include technologies needing EXTRA development effort
+- Show reasoning by including excluded_items
+- Maximum countable: 5 (XL ceiling). If more found,
+  include only the 5 most complex.
+- rpa_tool_notes: fill in impact or write "No special impact"
+
+PDD Sections:
+{sections_text}
+"""
+
+TECHNOLOGY_DETECTION_RETRY_PROMPT = """
+Return ONLY this JSON:
+{{
+  "technologies": [],
+  "excluded_items": [],
+  "total_count": 0,
+  "detection_confidence": 0.1,
+  "notes": "retry attempt"
+}}
+
+Or fill actual values from this text:
+{sections_text_truncated}
+"""
