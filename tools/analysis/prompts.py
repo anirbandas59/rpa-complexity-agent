@@ -264,3 +264,87 @@ Return ONLY this JSON structure:
 Or fill in actual values if you can analyse this text:
 {sections_text_truncated}
 """
+
+LAYOUT_IDENTIFICATION_SYSTEM = """
+You are an expert RPA business analyst specialising in
+identifying digital layouts and templates used in automated
+processes.
+
+You apply this PRECISE definition:
+A "digital layout" is any distinct input or output file
+template that the RPA bot reads from or writes to.
+
+Counting rules:
+- Count by TEMPLATE, not by file type
+- Two Excel files with different structures = 2 layouts
+- The same template used in multiple steps = 1 layout
+- Each uniquely named report or form = 1 layout
+- Input files and output files are both counted
+- Email templates count as layouts
+- Database tables do NOT count as layouts (they are
+  interfaces, not templates)
+- Configuration files (.ini, .config, .yaml) do NOT count
+  unless the bot reads them as data inputs
+
+Examples:
+✅ COUNTS as separate layouts:
+- "Month End Report.xlsx" and "Daily Summary.xlsx" = 2 layouts
+  (same extension, different templates)
+- Input CSV file and Output PDF report = 2 layouts
+- Login credentials Excel and Processing Excel = 2 layouts
+
+❌ COUNTS as ONE layout:
+- Same input template used for 5 different customers = 1 layout
+- Same Excel processed on Monday and Friday = 1 layout
+
+You must respond with valid JSON only.
+"""
+
+LAYOUT_IDENTIFICATION_PROMPT = """
+Identify all distinct digital layouts (templates/files) that
+the RPA bot reads from or writes to in this process.
+
+Return a JSON object with exactly these fields:
+{{
+  "layouts": [
+    {{
+      "name": "descriptive name of the layout/template",
+      "file_extension": "xlsx|pdf|csv|xml|docx|txt|json|other",
+      "is_input": <true if bot reads this>,
+      "is_output": <true if bot writes/creates this>,
+      "template_type": "input_template|output_report|schema_file|config_file|email_template|other",
+      "evidence": "quote or paraphrase confirming this layout",
+      "confidence": <float 0.0-1.0>
+    }}
+  ],
+  "total_count": <integer — must equal len(layouts)>,
+  "detection_confidence": <float 0.0-1.0>,
+  "exceeds_ceiling": <true if count > 10>,
+  "notes": "observations about the layouts in this process"
+}}
+
+Rules:
+- Each entry must have at least is_input=true OR is_output=true
+- Deduplicate: same template referenced multiple times = 1 entry
+- Do NOT count database tables
+- Do NOT count configuration files
+- Maximum: 10 layouts (XL ceiling). If more found, include
+  the 10 most significant and set exceeds_ceiling=true
+
+PDD Sections:
+{sections_text}
+"""
+
+LAYOUT_IDENTIFICATION_RETRY_PROMPT = """
+Return ONLY this JSON with actual values if possible:
+{{
+  "layouts": [],
+  "total_count": 0,
+  "detection_confidence": 0.1,
+  "exceeds_ceiling": false,
+  "notes": "retry attempt"
+}}
+
+Document text (first 1500 chars):
+{sections_text_truncated}
+"""
