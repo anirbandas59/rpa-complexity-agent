@@ -38,6 +38,7 @@ data/temp/
 *.pdf
 !data/templates/*.xlsx
 !tests/fixtures/*.xlsx
+!tests/fixtures/*.pdf
 
 # Logs — track directory, exclude log files
 logs/*.log

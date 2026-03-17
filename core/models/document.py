@@ -19,8 +19,8 @@ class ParsedDocument(BaseModel):
     source_path: str = Field(..., description="Absolute path to the original file")
     file_type: str = Field(..., description='File type: "pdf" or "docx"')
     full_text: str = Field(..., description="Complete extracted text content")
-    tables: list[dict[str, Any]] = Field(
-        default_factory=list, description="List of tables as dicts"
+    tables: list[list[dict[str, Any]]] = Field(
+        default_factory=list, description="List of tables, each table is a list of row dicts"
     )
     page_count: int = Field(..., description="Total number of pages")
     metadata: dict[str, str] = Field(
