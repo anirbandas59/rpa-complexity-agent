@@ -35,7 +35,10 @@ Thumbs.db
 data/outputs/
 data/temp/
 *.xlsx
+*.xls
 *.pdf
+*.docx
+*.doc
 !data/templates/*.xlsx
 !tests/fixtures/*.xlsx
 !tests/fixtures/*.pdf
