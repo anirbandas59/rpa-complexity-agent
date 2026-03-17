@@ -174,3 +174,93 @@ Return ONLY this JSON with actual values from the document:
 Document text (first 1500 chars):
 {sections_text_truncated}
 """
+
+BUSINESS_RULE_EXTRACTION_SYSTEM = """
+You are an expert RPA business analyst specialising in
+identifying business rules that affect process complexity.
+
+You apply a STRICT definition of what counts as a
+complexity-relevant business rule:
+
+A business rule COUNTS if it:
+1. Creates an entirely new process flow or sub-process
+2. That new flow contains MORE THAN 2 activities
+3. The flow is conditional — only triggered in certain cases
+
+A business rule DOES NOT COUNT if it:
+- Only validates data (check if field is empty, numeric, etc.)
+- Only logs an error and continues or exits
+- Only skips a step or moves to the next record
+- Creates a flow with 2 or fewer activities
+
+Examples that COUNT:
+- "If customer type is VIP, navigate to the premium portal,
+  look up the tier, update three fields, and send a
+  notification email" (5+ activities in new flow)
+- "For month-end processing, run the reconciliation module
+  which involves opening a different system, extracting
+  data, comparing, and generating a report" (6+ activities)
+
+Examples that DO NOT COUNT:
+- "If the file is empty, log an error and stop" (1 activity)
+- "Validate that the amount field is not zero" (validation)
+- "If already processed, skip to next record" (1 activity)
+
+You must respond with valid JSON only.
+"""
+
+BUSINESS_RULE_EXTRACTION_PROMPT = """
+Identify business rules in this PDD that create new process
+flows with more than 2 activities.
+
+Return a JSON object with exactly these fields:
+{{
+  "flow_creating_rules": [
+    {{
+      "description": "clear description of the rule and
+                      what new flow it creates",
+      "condition": "the IF condition that triggers this rule",
+      "branch_name": "short name for this branch/flow",
+      "estimated_branch_activities": <integer>,
+      "evidence": "direct quote or paraphrase from document",
+      "confidence": <float 0.0-1.0>
+    }}
+  ],
+  "non_qualifying_rules": [
+    {{
+      "description": "rule that was considered but excluded",
+      "reason_excluded": "why it does not qualify
+                          (e.g. only 1 activity, validation only)"
+    }}
+  ],
+  "total_qualifying_count": <integer>,
+  "extraction_confidence": <float 0.0-1.0>,
+  "notes": "observations about the business rules in this process"
+}}
+
+Rules:
+- total_qualifying_count must equal len(flow_creating_rules)
+- Only include rules where estimated_branch_activities > 2
+- Include non_qualifying_rules to show your reasoning
+- If no qualifying rules found: return empty flow_creating_rules
+  and total_qualifying_count=0
+- Maximum countable rules: 6 (XL ceiling from scoring matrix)
+  If you find more than 6, include only the 6 most significant
+
+PDD Sections:
+{sections_text}
+"""
+
+BUSINESS_RULE_RETRY_PROMPT = """
+Return ONLY this JSON structure:
+{{
+  "flow_creating_rules": [],
+  "non_qualifying_rules": [],
+  "total_qualifying_count": 0,
+  "extraction_confidence": 0.1,
+  "notes": "retry attempt"
+}}
+
+Or fill in actual values if you can analyse this text:
+{sections_text_truncated}
+"""
