@@ -103,3 +103,74 @@ Or if you can analyse the document, fill in the actual values.
 Document text (first 1500 chars):
 {sections_text_truncated}
 """
+
+INTERFACE_DETECTION_SYSTEM = """
+You are an expert RPA business analyst specialising in
+identifying target applications that an RPA bot must interact
+with during process execution.
+
+A "target application" is any system, tool, or interface
+that the business uses and that the RPA bot must open,
+read from, write to, click in, or otherwise interact with.
+
+Classification rules:
+- Count each distinct application separately
+- SAP modules (SAP ECC, SAP BW, SAP HR) count as ONE
+  application unless the bot uses completely different
+  transaction codes in different SAP systems
+- Microsoft Office apps count separately (Excel ≠ Outlook
+  ≠ Word ≠ Teams)
+- Web browsers count as the WEBSITE they access, not
+  the browser itself (Chrome is not an application —
+  "Customer Portal" is)
+- Email counts as ONE interface (Outlook/Gmail/etc.)
+- File system / shared drive counts as ONE interface
+
+You must respond with valid JSON only.
+"""
+
+INTERFACE_DETECTION_PROMPT = """
+Identify all target applications/interfaces that the RPA
+bot must interact with in this process.
+
+Return a JSON object with exactly these fields:
+{{
+  "applications": [
+    {{
+      "name": "canonical application name",
+      "type": "web|desktop|api|database|file_system|email",
+      "automation_method": "ui_automation|api_call|file_read_write|email_trigger",
+      "evidence": "quote or paraphrase from the document confirming this",
+      "confidence": <float 0.0-1.0>
+    }}
+  ],
+  "total_count": <integer — must equal len(applications)>,
+  "detection_confidence": <float 0.0-1.0>,
+  "notes": "any relevant observations about the interfaces"
+}}
+
+Rules:
+- Deduplicate: SAP and SAP ECC are the same application
+- Do NOT include the RPA tool itself (Blue Prism, UiPath etc.)
+- Do NOT include operating system components (Windows
+  Explorer, Task Scheduler) unless the bot explicitly
+  interacts with them as part of the process
+- If no applications are clearly identified: return
+  empty applications array and detection_confidence=0.1
+
+PDD Sections:
+{sections_text}
+"""
+
+INTERFACE_DETECTION_RETRY_PROMPT = """
+Return ONLY this JSON with actual values from the document:
+{{
+  "applications": [],
+  "total_count": 0,
+  "detection_confidence": 0.1,
+  "notes": "retry attempt"
+}}
+
+Document text (first 1500 chars):
+{sections_text_truncated}
+"""
