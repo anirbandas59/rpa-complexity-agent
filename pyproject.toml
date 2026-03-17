@@ -51,6 +51,9 @@ testpaths = ["tests"]
 asyncio_mode = "auto"
 log_cli = true
 log_cli_level = "INFO"
+markers = [
+    "integration: marks tests that make real API calls (deselect with '-m \"not integration\"')",
+]
 
 [tool.mypy]
 python_version = "3.11"
