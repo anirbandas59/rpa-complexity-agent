@@ -1,6 +1,7 @@
 .git
 .gitignore
 .env
+.env.example
 __pycache__
 *.pyc
 *.pyo
@@ -11,8 +12,10 @@ __pycache__
 logs/
 data/outputs/
 data/temp/
+data/sample_pdds/
 tests/
 *.md
 !README.md
 .claude/
 scripts/validate_*.py
+main.py

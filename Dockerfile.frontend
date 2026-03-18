@@ -2,19 +2,20 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
+
 # Install curl for healthcheck
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
-# Install UV
-RUN pip install uv
+# Install UV from official image (avoids pip bootstrap, pinned to latest release)
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 # Copy dependency files
 COPY pyproject.toml .
-COPY uv.lock* .
+COPY uv.lock .
 
-# Install dependencies (frontend needs streamlit + httpx only
-# but we install full deps to avoid maintaining two lists)
-RUN uv sync --no-dev
+# Install frontend optional extra (streamlit + httpx) without dev dependencies
+RUN uv sync --no-dev --extra frontend
 
 # Copy frontend code and config
 COPY frontend/ frontend/
@@ -23,8 +24,12 @@ COPY core/ core/
 
 # Streamlit config
 RUN mkdir -p .streamlit
-RUN printf '[server]\nheadless = true\naddress = "0.0.0.0"\nport = 8501\n[browser]\ngatherUsageStats = false\n' \
+RUN printf '[server]\nheadless = true\naddress = "0.0.0.0"\nport = 8501\n[browser]\ngatherUsageStats = false\n[client]\nshowErrorDetails = "none"\n' \
     > .streamlit/config.toml
+
+# Drop root: create unprivileged user and hand over the workdir
+RUN useradd -m appuser && chown -R appuser:appuser /app
+USER appuser
 
 EXPOSE 8501
 

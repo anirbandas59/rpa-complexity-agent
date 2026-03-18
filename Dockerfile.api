@@ -2,6 +2,8 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
+
 # Install system dependencies needed by PyMuPDF and reportlab
 RUN apt-get update && apt-get install -y \
     libmupdf-dev \
@@ -11,12 +13,12 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install UV
-RUN pip install uv
+# Install UV from official image (avoids pip bootstrap, pinned to latest release)
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 # Copy dependency files first (layer caching)
 COPY pyproject.toml .
-COPY uv.lock* .
+COPY uv.lock .
 
 # Install dependencies
 RUN uv sync --no-dev
@@ -33,6 +35,10 @@ COPY data/templates/ data/templates/
 
 # Create required directories
 RUN mkdir -p data/outputs data/temp logs
+
+# Drop root: create unprivileged user and hand over the workdir
+RUN useradd -m appuser && chown -R appuser:appuser /app
+USER appuser
 
 # Expose port
 EXPOSE 8000

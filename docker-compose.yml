@@ -11,6 +11,7 @@ services:
       - ./data/outputs:/app/data/outputs
       - ./data/temp:/app/data/temp
       - ./logs:/app/logs
+    # Requires .env in project root — copy from .env.example and fill in values
     env_file:
       - .env
     environment:
@@ -18,6 +19,8 @@ services:
       - OUTPUT_DIR=data/outputs
       - TEMP_DIR=data/temp
     restart: unless-stopped
+    networks:
+      - rpa_net
     healthcheck:
       test: ["CMD", "curl", "-f",
              "http://localhost:8000/api/health"]
@@ -39,8 +42,9 @@ services:
       api:
         condition: service_healthy
     restart: unless-stopped
+    networks:
+      - rpa_net
 
-volumes:
-  outputs:
-  temp:
-  logs:
+networks:
+  rpa_net:
+    driver: bridge
