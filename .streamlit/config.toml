@@ -1,0 +1,11 @@
+[client]
+showErrorDetails = "stacktrace"
+logger.level = "info"
+
+[runner]
+magicEnabled = true
+
+[server]
+port = 8502
+headless = true
+runOnSave = true

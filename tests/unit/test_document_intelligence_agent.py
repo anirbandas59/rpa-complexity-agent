@@ -6,7 +6,7 @@ Unit tests mock all tools. Integration test uses real files and LLM.
 """
 
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -19,7 +19,7 @@ from agents.document_intelligence.agent import (
     should_continue,
     validate_output,
 )
-from core.exceptions import AgentExecutionError, DocumentProcessingError
+from core.exceptions import AgentExecutionError
 from core.models.document import ExtractedSection, ParsedDocument
 from tools.document.entity_extractor import (
     ApplicationEntity,
@@ -27,14 +27,18 @@ from tools.document.entity_extractor import (
     EntityExtractionResponse,
 )
 
-
 # ==================== FIXTURES ====================
 
 
 @pytest.fixture
 def sample_process_docx() -> Path:
     """Path to sample_process.docx test fixture."""
-    path = Path(__file__).parent.parent.parent / "data" / "sample_pdds" / "sample_process.docx"
+    path = (
+        Path(__file__).parent.parent.parent
+        / "data"
+        / "sample_pdds"
+        / "sample_process.docx"
+    )
     assert path.exists()
     return path
 
@@ -104,9 +108,7 @@ def mock_entities() -> EntityExtractionResponse:
         sap_tcodes=[],
         process_triggers=[],
         roles=[],
-        confidence=ConfidenceScores(
-            applications=0.9, technologies=0.8, overall=0.85
-        ),
+        confidence=ConfidenceScores(applications=0.9, technologies=0.8, overall=0.85),
     )
 
 
@@ -287,9 +289,7 @@ def test_identify_sections_successful(
     mock_sections: list[ExtractedSection],
 ):
     """Test successful section identification."""
-    with patch(
-        "agents.document_intelligence.agent.identify_sections"
-    ) as mock_identify:
+    with patch("agents.document_intelligence.agent.identify_sections") as mock_identify:
         mock_identify.return_value = mock_sections
         state = base_state.copy()
         state["parsed_document"] = mock_parsed_document
@@ -305,9 +305,7 @@ def test_identify_sections_handles_exception(
     mock_parsed_document: ParsedDocument,
 ):
     """Test that section identification failure adds warning (recoverable)."""
-    with patch(
-        "agents.document_intelligence.agent.identify_sections"
-    ) as mock_identify:
+    with patch("agents.document_intelligence.agent.identify_sections") as mock_identify:
         mock_identify.side_effect = Exception("Section ID failed")
         state = base_state.copy()
         state["parsed_document"] = mock_parsed_document
@@ -341,9 +339,7 @@ def test_extract_entities_creates_catchall_section(
     mock_entities: EntityExtractionResponse,
 ):
     """Test that catch-all section is created when no sections."""
-    with patch(
-        "agents.document_intelligence.agent.extract_entities"
-    ) as mock_extract:
+    with patch("agents.document_intelligence.agent.extract_entities") as mock_extract:
         mock_extract.return_value = mock_entities
         state = base_state.copy()
         state["parsed_document"] = mock_parsed_document
@@ -366,9 +362,7 @@ def test_extract_entities_successful(
     mock_entities: EntityExtractionResponse,
 ):
     """Test successful entity extraction."""
-    with patch(
-        "agents.document_intelligence.agent.extract_entities"
-    ) as mock_extract:
+    with patch("agents.document_intelligence.agent.extract_entities") as mock_extract:
         mock_extract.return_value = mock_entities
         state = base_state.copy()
         state["parsed_document"] = mock_parsed_document
@@ -387,9 +381,7 @@ def test_extract_entities_handles_exception(
     mock_sections: list[ExtractedSection],
 ):
     """Test that entity extraction failure adds warning (recoverable)."""
-    with patch(
-        "agents.document_intelligence.agent.extract_entities"
-    ) as mock_extract:
+    with patch("agents.document_intelligence.agent.extract_entities") as mock_extract:
         mock_extract.side_effect = Exception("Entity extraction failed")
         state = base_state.copy()
         state["parsed_document"] = mock_parsed_document
@@ -447,8 +439,11 @@ def test_validate_output_low_word_count_needs_review(
     state["parsed_document"] = low_word_doc
     state["sections"] = [
         ExtractedSection(
-            title="Test", content="test", section_type="general",
-            confidence_score=0.5, page_number=None
+            title="Test",
+            content="test",
+            section_type="general",
+            confidence_score=0.5,
+            page_number=None,
         )
     ]
     state["entities"] = EntityExtractionResponse(
@@ -469,8 +464,11 @@ def test_validate_output_few_sections_needs_review(
     state["parsed_document"] = mock_parsed_document
     state["sections"] = [
         ExtractedSection(
-            title="Test", content="test", section_type="general",
-            confidence_score=0.5, page_number=None
+            title="Test",
+            content="test",
+            section_type="general",
+            confidence_score=0.5,
+            page_number=None,
         )
     ]  # Only 1 section
     state["entities"] = EntityExtractionResponse(
@@ -491,20 +489,19 @@ def test_validate_output_no_applications_needs_review(
     state["parsed_document"] = mock_parsed_document
     state["sections"] = [
         ExtractedSection(
-            title="Test", content="test", section_type="general",
-            confidence_score=0.5, page_number=None
+            title="Test",
+            content="test",
+            section_type="general",
+            confidence_score=0.5,
+            page_number=None,
         )
     ] * 3  # Multiple sections
-    state["entities"] = EntityExtractionResponse(
-        applications=[]  # No applications
-    )
+    state["entities"] = EntityExtractionResponse(applications=[])  # No applications
 
     result = validate_output(state)
 
     assert result["status"] == "needs_review"
-    assert any(
-        "No target applications" in w for w in result["warnings"]
-    )
+    assert any("No target applications" in w for w in result["warnings"])
 
 
 def test_validate_output_success(
@@ -635,12 +632,14 @@ def test_document_intelligence_agent_integration(sample_process_docx: Path):
     assert result["entities"] is not None
     assert result["completed_at"] != ""
 
-    print(f"\n=== Document Intelligence Agent Integration Test ===")
+    print("\n=== Document Intelligence Agent Integration Test ===")
     print(f"Session ID: {result['session_id']}")
     print(f"Status: {result['status']}")
-    print(f"Parsed Document: {result['parsed_document'].file_type} "
-          f"({result['parsed_document'].page_count} pages, "
-          f"{result['parsed_document'].word_count()} words)")
+    print(
+        f"Parsed Document: {result['parsed_document'].file_type} "
+        f"({result['parsed_document'].page_count} pages, "
+        f"{result['parsed_document'].word_count()} words)"
+    )
     print(f"Sections Found: {len(result['sections'])}")
     for section in result["sections"][:3]:
         print(f"  - {section.title} ({section.section_type})")

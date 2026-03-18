@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -14,7 +13,6 @@ from tools.analysis.technology_detector import (
     RPAToolNotes,
     TechnologyDetectionLLMResponse,
     TechnologyDetectionResult,
-    XL_TECHNOLOGY_CEILING,
     _detect_api_integration,
     _detect_surface_automation,
     _filter_relevant_sections,
@@ -23,7 +21,6 @@ from tools.analysis.technology_detector import (
     get_technology_count,
     get_technology_tier_hint,
 )
-
 
 # ==================== TEST: _detect_surface_automation ====================
 
@@ -369,8 +366,10 @@ class TestPrepareSectionsText:
         """Single section is formatted correctly."""
         sections = [
             ExtractedSection(
-                title="Overview", section_type="process_overview", content="Content here",
-                confidence_score=0.9
+                title="Overview",
+                section_type="process_overview",
+                content="Content here",
+                confidence_score=0.9,
             ),
         ]
         result = _prepare_sections_text(sections)
@@ -475,7 +474,9 @@ class TestDetectTechnology:
         mock_llm = MagicMock()
         mock_response = TechnologyDetectionLLMResponse(
             technologies=[
-                DetectedTechnology(name="REST API Gateway", category="api", confidence=0.9)
+                DetectedTechnology(
+                    name="REST API Gateway", category="api", confidence=0.9
+                )
             ],
             total_count=1,
             detection_confidence=0.85,
@@ -529,7 +530,9 @@ class TestDetectTechnology:
         mock_llm = MagicMock()
         # Create 7 technologies
         technologies = [
-            DetectedTechnology(name=f"Tech{i}", category="api", confidence=0.9 - i * 0.1)
+            DetectedTechnology(
+                name=f"Tech{i}", category="api", confidence=0.9 - i * 0.1
+            )
             for i in range(7)
         ]
         mock_response = TechnologyDetectionLLMResponse(
@@ -562,7 +565,9 @@ class TestDetectTechnology:
             DetectedTechnology(name="Tech3", category="api", confidence=0.6),
             DetectedTechnology(name="Tech4", category="api", confidence=0.8),
             DetectedTechnology(name="Tech5", category="api", confidence=0.7),
-            DetectedTechnology(name="Tech6", category="api", confidence=0.95),  # Second highest
+            DetectedTechnology(
+                name="Tech6", category="api", confidence=0.95
+            ),  # Second highest
             DetectedTechnology(name="Tech7", category="api", confidence=0.4),
         ]
         mock_response = TechnologyDetectionLLMResponse(
@@ -660,7 +665,9 @@ class TestDetectTechnology:
             ),
         ]
 
-        result = detect_technology(sections, entity_result=mock_entity_result, llm_manager=mock_llm)
+        detect_technology(
+            sections, entity_result=mock_entity_result, llm_manager=mock_llm
+        )
 
         # Verify that the mock was called (entity_result was processed)
         # Check the call args to see if entity technologies were appended
@@ -719,9 +726,7 @@ class TestTechnologyDetectionResultProperties:
     def test_exceeds_xl_ceiling_true(self):
         """exceeds_xl_ceiling() returns True when count > 5."""
         result = TechnologyDetectionResult(
-            technologies=[
-                DetectedTechnology(name=f"Tech{i}") for i in range(6)
-            ],
+            technologies=[DetectedTechnology(name=f"Tech{i}") for i in range(6)],
             total_count=6,
             detection_confidence=0.8,
             has_surface_automation=False,
@@ -732,9 +737,7 @@ class TestTechnologyDetectionResultProperties:
     def test_exceeds_xl_ceiling_false(self):
         """exceeds_xl_ceiling() returns False when count <= 5."""
         result = TechnologyDetectionResult(
-            technologies=[
-                DetectedTechnology(name=f"Tech{i}") for i in range(3)
-            ],
+            technologies=[DetectedTechnology(name=f"Tech{i}") for i in range(3)],
             total_count=3,
             detection_confidence=0.8,
             has_surface_automation=False,
@@ -977,9 +980,7 @@ class TestGetTechnologyTierHint:
     def test_three_technologies(self):
         """3 technologies returns L hint."""
         result = TechnologyDetectionResult(
-            technologies=[
-                DetectedTechnology(name=f"Tech{i}") for i in range(3)
-            ],
+            technologies=[DetectedTechnology(name=f"Tech{i}") for i in range(3)],
             total_count=3,
             detection_confidence=0.8,
             has_surface_automation=False,
@@ -991,9 +992,7 @@ class TestGetTechnologyTierHint:
     def test_five_technologies(self):
         """5 technologies returns XL hint."""
         result = TechnologyDetectionResult(
-            technologies=[
-                DetectedTechnology(name=f"Tech{i}") for i in range(5)
-            ],
+            technologies=[DetectedTechnology(name=f"Tech{i}") for i in range(5)],
             total_count=5,
             detection_confidence=0.8,
             has_surface_automation=False,
@@ -1006,9 +1005,7 @@ class TestGetTechnologyTierHint:
     def test_exceeds_ceiling(self):
         """More than 5 technologies returns exceeds hint."""
         result = TechnologyDetectionResult(
-            technologies=[
-                DetectedTechnology(name=f"Tech{i}") for i in range(6)
-            ],
+            technologies=[DetectedTechnology(name=f"Tech{i}") for i in range(6)],
             total_count=6,
             detection_confidence=0.8,
             has_surface_automation=False,

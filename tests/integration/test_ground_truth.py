@@ -20,7 +20,6 @@ from core.scoring.classifier import classify_with_validation
 from core.scoring.effort_table import calculate_effort
 from core.scoring.weight_matrix import get_weight, map_value_to_tier
 
-
 # ============================================================================
 # SECTION A: Scoring Engine Ground Truth
 # ============================================================================
@@ -62,9 +61,9 @@ class TestScoringEngineGroundTruth:
         expected_tiers = [
             ComplexityTier.XL,  # Activities 52
             ComplexityTier.XL,  # Business Rules 6
-            ComplexityTier.L,   # Layouts 5
-            ComplexityTier.S,   # Interfaces 2
-            ComplexityTier.S,   # Technology 0
+            ComplexityTier.L,  # Layouts 5
+            ComplexityTier.S,  # Interfaces 2
+            ComplexityTier.S,  # Technology 0
         ]
         expected_weights = [8, 8, 3, 1, 1]
 
@@ -73,15 +72,15 @@ class TestScoringEngineGroundTruth:
 
             # Map value to tier
             tier = map_value_to_tier(attr_id, raw_value)
-            assert tier == expected_tiers[attr_id - 1], (
-                f"Attr {attr_id}: expected {expected_tiers[attr_id - 1]}, got {tier}"
-            )
+            assert (
+                tier == expected_tiers[attr_id - 1]
+            ), f"Attr {attr_id}: expected {expected_tiers[attr_id - 1]}, got {tier}"
 
             # Get weight
             weight = get_weight(attr_id, tier)
-            assert weight == expected_weights[attr_id - 1], (
-                f"Attr {attr_id}: expected weight {expected_weights[attr_id - 1]}, got {weight}"
-            )
+            assert (
+                weight == expected_weights[attr_id - 1]
+            ), f"Attr {attr_id}: expected weight {expected_weights[attr_id - 1]}, got {weight}"
 
             # Build score
             scores.append(
@@ -106,29 +105,31 @@ class TestScoringEngineGroundTruth:
 
         # Step 4: Calculate effort
         effort = calculate_effort(ComplexityTier.L)
-        assert effort.total_min_days == 60, (
-            f"Expected 60 days, got {effort.total_min_days}"
-        )
+        assert (
+            effort.total_min_days == 60
+        ), f"Expected 60 days, got {effort.total_min_days}"
         assert effort.total_max_days == 60
-        assert effort.sprint_display == "6 sprints", (
-            f"Expected '6 sprints', got {effort.sprint_display}"
-        )
+        assert (
+            effort.sprint_display == "6 sprints"
+        ), f"Expected '6 sprints', got {effort.sprint_display}"
 
         # Print report
         print("\n" + "=" * 60)
         print("  GROUND TRUTH SCORING ENGINE VALIDATION")
         print("=" * 60)
-        print(f"  Project: GMP ASM Automation (Blue Prism)")
-        print(f"  ")
-        print(f"  Attribute Scoring:")
+        print("  Project: GMP ASM Automation (Blue Prism)")
+        print("  ")
+        print("  Attribute Scoring:")
         for i, score in enumerate(scores, 1):
-            print(f"    Attr {i}: {score.raw_value:2} → {score.selected_tier.value:2} → weight {score.weight}")
-        print(f"  ")
+            print(
+                f"    Attr {i}: {score.raw_value:2} → {score.selected_tier.value:2} → weight {score.weight}"
+            )
+        print("  ")
         print(f"  Total Score: {total_score}/28")
         print(f"  Complexity Tier: {final_tier.value}")
         print(f"  Effort: {effort.total_min_days} days / {effort.sprint_display}")
-        print(f"  ")
-        print(f"  ✓ MATCHES EXCEL WORKBOOK GROUND TRUTH")
+        print("  ")
+        print("  ✓ MATCHES EXCEL WORKBOOK GROUND TRUTH")
         print("=" * 60)
 
 
@@ -147,7 +148,11 @@ class TestValidationScriptGroundTruth:
         This proves that the scoring engine remains deterministic and
         correct after all subsequent phases were added.
         """
-        script_path = Path(__file__).parent.parent.parent / "scripts" / "validate_scoring_engine.py"
+        script_path = (
+            Path(__file__).parent.parent.parent
+            / "scripts"
+            / "validate_scoring_engine.py"
+        )
 
         if not script_path.exists():
             pytest.skip(f"Validation script not found: {script_path}")
@@ -171,14 +176,14 @@ class TestValidationScriptGroundTruth:
         )
 
         # Must report all cases passed
-        assert "13/13 cases passed" in result.stdout, (
-            f"Expected '13/13 cases passed' in output"
-        )
+        assert (
+            "13/13 cases passed" in result.stdout
+        ), "Expected '13/13 cases passed' in output"
 
         # Must report PHASE 1 GATE — PASSED
-        assert "PHASE 1 GATE — PASSED" in result.stdout, (
-            f"Expected 'PHASE 1 GATE — PASSED' in output"
-        )
+        assert (
+            "PHASE 1 GATE — PASSED" in result.stdout
+        ), "Expected 'PHASE 1 GATE — PASSED' in output"
 
 
 # ============================================================================
@@ -212,9 +217,9 @@ class TestExcelTemplateConsistency:
 
         # Check 1: All sheets exist
         expected_sheets = ["Calculator", "Steps", "Feature and delivery timeline"]
-        assert wb.sheetnames == expected_sheets, (
-            f"Expected sheets {expected_sheets}, got {wb.sheetnames}"
-        )
+        assert (
+            wb.sheetnames == expected_sheets
+        ), f"Expected sheets {expected_sheets}, got {wb.sheetnames}"
 
         # Check 2: Weight matrix values
         # The exact cell locations depend on the template layout
@@ -244,7 +249,12 @@ class TestEndToEndGroundTruth:
     @pytest.fixture(scope="class")
     def sample_docx_path(self):
         """Sample DOCX for E2E testing."""
-        path = Path(__file__).parent.parent.parent / "data" / "sample_pdds" / "sample_process.docx"
+        path = (
+            Path(__file__).parent.parent.parent
+            / "data"
+            / "sample_pdds"
+            / "sample_process.docx"
+        )
         if not path.exists():
             pytest.skip(f"Test fixture not found: {path}")
         return str(path.absolute())
@@ -268,20 +278,26 @@ class TestEndToEndGroundTruth:
         )
 
         # Validation Step 1: Pipeline must complete
-        assert result["status"] in ["success", "partial"], (
-            f"Pipeline failed: {result['errors']}"
-        )
+        assert result["status"] in [
+            "success",
+            "partial",
+        ], f"Pipeline failed: {result['errors']}"
 
         # Validation Step 2: Must produce a valid tier
         assert result["complexity_tier"] in [
-            "XS", "S", "M", "L", "XL", None
+            "XS",
+            "S",
+            "M",
+            "L",
+            "XL",
+            None,
         ], f"Invalid tier: {result['complexity_tier']}"
 
         # Validation Step 3: Score must be in valid range
         if result["total_score"] is not None:
-            assert 0 <= result["total_score"] <= 28, (
-                f"Score {result['total_score']} outside [0, 28]"
-            )
+            assert (
+                0 <= result["total_score"] <= 28
+            ), f"Score {result['total_score']} outside [0, 28]"
 
         # Validation Step 4: Must have all 5 attributes
         attrs = result["raw_attributes"]
@@ -295,12 +311,10 @@ class TestEndToEndGroundTruth:
             ]
             for attr in expected_attrs:
                 if attr in attrs:
-                    assert isinstance(attrs[attr], int), (
-                        f"Attribute {attr} not int: {attrs[attr]}"
-                    )
-                    assert attrs[attr] >= 0, (
-                        f"Attribute {attr} negative: {attrs[attr]}"
-                    )
+                    assert isinstance(
+                        attrs[attr], int
+                    ), f"Attribute {attr} not int: {attrs[attr]}"
+                    assert attrs[attr] >= 0, f"Attribute {attr} negative: {attrs[attr]}"
 
         # Validation Step 5: Output files
         if result["status"] == "success":
@@ -314,9 +328,9 @@ class TestEndToEndGroundTruth:
             if excel_path and Path(excel_path).exists():
                 wb = load_workbook(excel_path)
                 assert len(wb.sheetnames) >= 1, "Excel workbook empty"
-                assert "Calculator" in wb.sheetnames, (
-                    "Calculator sheet missing from Excel"
-                )
+                assert (
+                    "Calculator" in wb.sheetnames
+                ), "Calculator sheet missing from Excel"
 
             # Validate PDF if generated
             pdf_path = result["output_files"].get("pdf", "")
@@ -331,38 +345,38 @@ class TestEndToEndGroundTruth:
         print("=" * 60)
         print(f"  Status:        {result['status']}")
         print(f"  Session ID:    {result['session_id']}")
-        print(f"  ")
-        print(f"  Complexity Assessment:")
+        print("  ")
+        print("  Complexity Assessment:")
         print(f"    Tier:      {result['complexity_tier']}")
         print(f"    Score:     {result['total_score']}/28")
         print(f"    Confidence:{result['confidence']}")
-        print(f"  ")
-        print(f"  Raw Attributes:")
+        print("  ")
+        print("  Raw Attributes:")
         attrs = result["raw_attributes"]
         if attrs:
             for key, value in sorted(attrs.items()):
                 print(f"    {key:15}: {value}")
         else:
-            print(f"    (none extracted)")
-        print(f"  ")
+            print("    (none extracted)")
+        print("  ")
         print(f"  Detected RPA Tool: {result['detected_rpa_tool']}")
-        print(f"  ")
-        print(f"  Output Files:")
+        print("  ")
+        print("  Output Files:")
         print(f"    Excel: {result['output_files']['excel']}")
         print(f"    PDF:   {result['output_files']['pdf']}")
-        print(f"  ")
+        print("  ")
         print(f"  Warnings: {len(result['warnings'])}")
         for w in result["warnings"][:3]:
             print(f"    - {w}")
         if len(result["warnings"]) > 3:
             print(f"    ... and {len(result['warnings']) - 3} more")
-        print(f"  ")
+        print("  ")
         print(f"  Errors: {len(result['errors'])}")
         for e in result["errors"][:3]:
             print(f"    - {e}")
         if len(result["errors"]) > 3:
             print(f"    ... and {len(result['errors']) - 3} more")
-        print(f"  ")
+        print("  ")
         print("=" * 60)
         print("  ✓ GROUND TRUTH END-TO-END VALIDATION COMPLETE")
         print("=" * 60)

@@ -1,6 +1,7 @@
 """Assessment page — Live progress during processing."""
 
 import time
+
 import streamlit as st
 
 
@@ -115,7 +116,11 @@ def show() -> None:
 
     st.caption(f"Auto-refreshing... (poll #{poll_count + 1}/{max_polls})")
 
-    if poll_count < max_polls and current_status not in ["success", "partial", "failed"]:
+    if poll_count < max_polls and current_status not in [
+        "success",
+        "partial",
+        "failed",
+    ]:
         st.session_state["poll_count"] = poll_count + 1
         time.sleep(3)
         st.rerun()

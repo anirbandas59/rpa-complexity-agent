@@ -64,17 +64,42 @@ def sample_decomposition() -> StepDecompositionResult:
                 branch_name="Main Flow",
                 description="Primary process steps",
                 steps=[
-                    StepData(step_number=1, description="Receive order", weight=1.0, reusability_tag="NONE"),
-                    StepData(step_number=2, description="Validate data", weight=1.0, reusability_tag="NONE"),
-                    StepData(step_number=3, description="Process payment", weight=2.0, reusability_tag="NONE"),
+                    StepData(
+                        step_number=1,
+                        description="Receive order",
+                        weight=1.0,
+                        reusability_tag="NONE",
+                    ),
+                    StepData(
+                        step_number=2,
+                        description="Validate data",
+                        weight=1.0,
+                        reusability_tag="NONE",
+                    ),
+                    StepData(
+                        step_number=3,
+                        description="Process payment",
+                        weight=2.0,
+                        reusability_tag="NONE",
+                    ),
                 ],
             ),
             BranchData(
                 branch_name="Error Handler",
                 description="Error handling and escalation",
                 steps=[
-                    StepData(step_number=1, description="Log error", weight=0.5, reusability_tag="PARTIAL"),
-                    StepData(step_number=2, description="Send alert", weight=0.5, reusability_tag="PARTIAL"),
+                    StepData(
+                        step_number=1,
+                        description="Log error",
+                        weight=0.5,
+                        reusability_tag="PARTIAL",
+                    ),
+                    StepData(
+                        step_number=2,
+                        description="Send alert",
+                        weight=0.5,
+                        reusability_tag="PARTIAL",
+                    ),
                 ],
             ),
         ],
@@ -163,9 +188,18 @@ class TestCalculateFeatureHours:
         branch = BranchData(
             branch_name="Main",
             steps=[
-                StepData(step_number=1, description="S1", weight=1.0, reusability_tag="NONE"),  # 9h
-                StepData(step_number=2, description="S2", weight=1.0, reusability_tag="NONE"),  # 9h
-                StepData(step_number=3, description="S3", weight=0.5, reusability_tag="PARTIAL"),  # 4.5h
+                StepData(
+                    step_number=1, description="S1", weight=1.0, reusability_tag="NONE"
+                ),  # 9h
+                StepData(
+                    step_number=2, description="S2", weight=1.0, reusability_tag="NONE"
+                ),  # 9h
+                StepData(
+                    step_number=3,
+                    description="S3",
+                    weight=0.5,
+                    reusability_tag="PARTIAL",
+                ),  # 4.5h
             ],
         )
         # 9 + 9 + 4.5 = 22.5
@@ -181,8 +215,18 @@ class TestCalculateFeatureHours:
         branch = BranchData(
             branch_name="Reused",
             steps=[
-                StepData(step_number=1, description="Reused", weight=0.0, reusability_tag="FULL"),
-                StepData(step_number=2, description="Reused", weight=0.0, reusability_tag="FULL"),
+                StepData(
+                    step_number=1,
+                    description="Reused",
+                    weight=0.0,
+                    reusability_tag="FULL",
+                ),
+                StepData(
+                    step_number=2,
+                    description="Reused",
+                    weight=0.0,
+                    reusability_tag="FULL",
+                ),
             ],
         )
         assert _calculate_feature_hours(branch) == 0
@@ -196,7 +240,9 @@ class TestCalculateFeatureHours:
 class TestBuildTimeline:
     """Test build_timeline function."""
 
-    def test_returns_delivery_timeline(self, sample_decomposition, sample_assessment_result):
+    def test_returns_delivery_timeline(
+        self, sample_decomposition, sample_assessment_result
+    ):
         """Test build_timeline returns DeliveryTimeline instance."""
         start = date(2024, 1, 8)  # Monday
         timeline = build_timeline(
@@ -218,7 +264,9 @@ class TestBuildTimeline:
         )
         assert len(timeline.features) == len(sample_decomposition.branches)
 
-    def test_features_ordered_sequentially(self, sample_decomposition, sample_assessment_result):
+    def test_features_ordered_sequentially(
+        self, sample_decomposition, sample_assessment_result
+    ):
         """Test features have sequential dates with no overlap."""
         start = date(2024, 1, 8)  # Monday
         timeline = build_timeline(
@@ -243,17 +291,42 @@ class TestBuildTimeline:
                     branch_name="Main Flow",
                     description="Primary flow",
                     steps=[
-                        StepData(step_number=1, description="S1", weight=1.0, reusability_tag="NONE"),
-                        StepData(step_number=2, description="S2", weight=1.0, reusability_tag="NONE"),
-                        StepData(step_number=3, description="S3", weight=2.0, reusability_tag="NONE"),
+                        StepData(
+                            step_number=1,
+                            description="S1",
+                            weight=1.0,
+                            reusability_tag="NONE",
+                        ),
+                        StepData(
+                            step_number=2,
+                            description="S2",
+                            weight=1.0,
+                            reusability_tag="NONE",
+                        ),
+                        StepData(
+                            step_number=3,
+                            description="S3",
+                            weight=2.0,
+                            reusability_tag="NONE",
+                        ),
                     ],
                 ),
                 BranchData(
                     branch_name="Error Handler",
                     description="Error handling",
                     steps=[
-                        StepData(step_number=1, description="E1", weight=0.5, reusability_tag="PARTIAL"),
-                        StepData(step_number=2, description="E2", weight=0.5, reusability_tag="PARTIAL"),
+                        StepData(
+                            step_number=1,
+                            description="E1",
+                            weight=0.5,
+                            reusability_tag="PARTIAL",
+                        ),
+                        StepData(
+                            step_number=2,
+                            description="E2",
+                            weight=0.5,
+                            reusability_tag="PARTIAL",
+                        ),
                     ],
                 ),
             ],
@@ -285,8 +358,18 @@ class TestBuildTimeline:
                     branch_name="Main Flow",
                     description="Primary flow",
                     steps=[
-                        StepData(step_number=1, description="S1", weight=1.0, reusability_tag="NONE"),
-                        StepData(step_number=2, description="S2", weight=1.0, reusability_tag="NONE"),
+                        StepData(
+                            step_number=1,
+                            description="S1",
+                            weight=1.0,
+                            reusability_tag="NONE",
+                        ),
+                        StepData(
+                            step_number=2,
+                            description="S2",
+                            weight=1.0,
+                            reusability_tag="NONE",
+                        ),
                     ],
                 ),
             ],
@@ -412,7 +495,9 @@ class TestBuildTimeline:
 class TestGetTimelineSummary:
     """Test get_timeline_summary formatter."""
 
-    def test_returns_non_empty_string(self, sample_decomposition, sample_assessment_result):
+    def test_returns_non_empty_string(
+        self, sample_decomposition, sample_assessment_result
+    ):
         """Test summary returns non-empty string."""
         start = date(2024, 1, 8)
         timeline = build_timeline(
@@ -424,7 +509,9 @@ class TestGetTimelineSummary:
         assert isinstance(summary, str)
         assert len(summary) > 0
 
-    def test_contains_project_name(self, sample_decomposition, sample_assessment_result):
+    def test_contains_project_name(
+        self, sample_decomposition, sample_assessment_result
+    ):
         """Test summary contains project name."""
         start = date(2024, 1, 8)
         timeline = build_timeline(
@@ -446,7 +533,9 @@ class TestGetTimelineSummary:
         summary = get_timeline_summary(timeline)
         assert "Total Hours" in summary
 
-    def test_contains_feature_names(self, sample_decomposition, sample_assessment_result):
+    def test_contains_feature_names(
+        self, sample_decomposition, sample_assessment_result
+    ):
         """Test summary contains each feature name."""
         start = date(2024, 1, 8)
         timeline = build_timeline(

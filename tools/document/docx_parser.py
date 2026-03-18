@@ -6,7 +6,6 @@ Provides schema-compatible output with parse_pdf for downstream consistency.
 
 from __future__ import annotations
 
-import logging
 import os
 from datetime import datetime
 from pathlib import Path
@@ -158,7 +157,14 @@ def _extract_metadata(doc: Any, path: Path) -> dict[str, str]:
 
     # Extract core properties
     core_props = doc.core_properties
-    for attr in ["author", "title", "subject", "created", "modified", "last_modified_by"]:
+    for attr in [
+        "author",
+        "title",
+        "subject",
+        "created",
+        "modified",
+        "last_modified_by",
+    ]:
         value = getattr(core_props, attr, None)
         cleaned = _format_metadata_value(value)
         if cleaned is not None:
@@ -249,7 +255,9 @@ def _extract_text(doc: Any) -> tuple[str, list[str]]:
             "may be image-based or template-only"
         )
 
-    logger.debug(f"Extracted text: {len(full_text)} characters, {len(warnings)} warnings")
+    logger.debug(
+        f"Extracted text: {len(full_text)} characters, {len(warnings)} warnings"
+    )
     return full_text, warnings
 
 
@@ -349,7 +357,9 @@ def _extract_table(table: Any) -> list[dict[str, str]]:
         # Build dict for this row
         row_dict = {}
         for col_idx, header in enumerate(headers):
-            cell_value = row.cells[col_idx].text.strip() if col_idx < len(row.cells) else ""
+            cell_value = (
+                row.cells[col_idx].text.strip() if col_idx < len(row.cells) else ""
+            )
             row_dict[header] = cell_value
 
         result.append(row_dict)

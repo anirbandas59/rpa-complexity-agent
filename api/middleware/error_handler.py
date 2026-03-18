@@ -6,9 +6,11 @@ HTTP status codes and JSON response formatting.
 """
 
 import logging
+
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-from core.exceptions import RPAAgentError, AgentExecutionError
+
+from core.exceptions import AgentExecutionError, RPAAgentError
 
 logger = logging.getLogger("rpa_agent.api.error_handler")
 

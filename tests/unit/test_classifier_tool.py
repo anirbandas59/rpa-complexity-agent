@@ -5,7 +5,7 @@ Comprehensive tests for generating complexity assessment results with
 LLM-based reasoning narratives.
 """
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -20,7 +20,6 @@ from tools.scoring.classifier_tool import (
     classify_and_explain,
     generate_reasoning,
 )
-
 
 # ==================== FIXTURES ====================
 
@@ -120,10 +119,10 @@ class TestBuildAttributeBreakdown:
         """Should reference raw values."""
         result = _build_attribute_breakdown(ground_truth_scores)
         assert "50" in result  # Activities
-        assert "5" in result   # Business rules
-        assert "4" in result   # Layouts
-        assert "1" in result   # Interfaces
-        assert "0" in result   # Technology
+        assert "5" in result  # Business rules
+        assert "4" in result  # Layouts
+        assert "1" in result  # Interfaces
+        assert "0" in result  # Technology
 
     def test_contains_weights(self, ground_truth_scores):
         """Should include weight values."""
@@ -147,31 +146,23 @@ class TestBuildScoreSummary:
 
     def test_returns_string(self, ground_truth_scores):
         """Should return a string."""
-        result = _build_score_summary(
-            ground_truth_scores, ComplexityTier.L, 21, 0.85
-        )
+        result = _build_score_summary(ground_truth_scores, ComplexityTier.L, 21, 0.85)
         assert isinstance(result, str)
 
     def test_contains_total_score(self, ground_truth_scores):
         """Should reference total score."""
-        result = _build_score_summary(
-            ground_truth_scores, ComplexityTier.L, 21, 0.85
-        )
+        result = _build_score_summary(ground_truth_scores, ComplexityTier.L, 21, 0.85)
         assert "21" in result
         assert "/28" in result
 
     def test_contains_tier(self, ground_truth_scores):
         """Should reference complexity tier."""
-        result = _build_score_summary(
-            ground_truth_scores, ComplexityTier.L, 21, 0.85
-        )
+        result = _build_score_summary(ground_truth_scores, ComplexityTier.L, 21, 0.85)
         assert "L" in result
 
     def test_contains_confidence(self, ground_truth_scores):
         """Should reference confidence as percentage."""
-        result = _build_score_summary(
-            ground_truth_scores, ComplexityTier.L, 21, 0.85
-        )
+        result = _build_score_summary(ground_truth_scores, ComplexityTier.L, 21, 0.85)
         assert "85%" in result
 
 
@@ -305,9 +296,7 @@ class TestGenerateReasoning:
             __import__("llm.manager", fromlist=["LLMManager"]).LLMManager,
             "complete_structured",
         ) as mock_complete:
-            mock_complete.return_value = ReasoningResponse(
-                reasoning="Test"
-            )
+            mock_complete.return_value = ReasoningResponse(reasoning="Test")
             generate_reasoning(
                 attribute_scores=ground_truth_scores,
                 tier=ComplexityTier.L,
@@ -385,9 +374,7 @@ class TestClassifyAndExplain:
 
     def test_returns_assessment_result(self, ground_truth_scores):
         """Should return AssessmentResult instance."""
-        with patch(
-            "tools.scoring.classifier_tool.generate_reasoning"
-        ) as mock_reason:
+        with patch("tools.scoring.classifier_tool.generate_reasoning") as mock_reason:
             mock_reason.return_value = ReasoningResponse(reasoning="Test")
             result = classify_and_explain(
                 attribute_scores=ground_truth_scores,
@@ -405,9 +392,7 @@ class TestClassifyAndExplain:
         Technology: S (0) → weight 1
         Total: 21 → L tier
         """
-        with patch(
-            "tools.scoring.classifier_tool.generate_reasoning"
-        ) as mock_reason:
+        with patch("tools.scoring.classifier_tool.generate_reasoning") as mock_reason:
             mock_reason.return_value = ReasoningResponse(reasoning="Test")
             result = classify_and_explain(
                 attribute_scores=ground_truth_scores,
@@ -420,9 +405,7 @@ class TestClassifyAndExplain:
 
     def test_result_has_all_fields(self, ground_truth_scores):
         """Should populate all required AssessmentResult fields."""
-        with patch(
-            "tools.scoring.classifier_tool.generate_reasoning"
-        ) as mock_reason:
+        with patch("tools.scoring.classifier_tool.generate_reasoning") as mock_reason:
             mock_reason.return_value = ReasoningResponse(reasoning="Test")
             result = classify_and_explain(
                 attribute_scores=ground_truth_scores,
@@ -484,9 +467,7 @@ class TestClassifyAndExplain:
                 tier_rationale="XL",
             ),
         ]
-        with patch(
-            "tools.scoring.classifier_tool.generate_reasoning"
-        ) as mock_reason:
+        with patch("tools.scoring.classifier_tool.generate_reasoning") as mock_reason:
             mock_reason.return_value = ReasoningResponse(reasoning="XL test")
             result = classify_and_explain(
                 attribute_scores=xl_scores,
@@ -497,9 +478,7 @@ class TestClassifyAndExplain:
 
     def test_inherits_session_id(self, ground_truth_scores):
         """Should use provided session_id."""
-        with patch(
-            "tools.scoring.classifier_tool.generate_reasoning"
-        ) as mock_reason:
+        with patch("tools.scoring.classifier_tool.generate_reasoning") as mock_reason:
             mock_reason.return_value = ReasoningResponse(reasoning="Test")
             result = classify_and_explain(
                 attribute_scores=ground_truth_scores,
@@ -509,9 +488,7 @@ class TestClassifyAndExplain:
 
     def test_generates_new_session_if_not_provided(self, ground_truth_scores):
         """Should generate session_id if not provided."""
-        with patch(
-            "tools.scoring.classifier_tool.generate_reasoning"
-        ) as mock_reason:
+        with patch("tools.scoring.classifier_tool.generate_reasoning") as mock_reason:
             mock_reason.return_value = ReasoningResponse(reasoning="Test")
             result = classify_and_explain(
                 attribute_scores=ground_truth_scores,
@@ -522,9 +499,7 @@ class TestClassifyAndExplain:
 
     def test_confidence_in_valid_range(self, ground_truth_scores):
         """Confidence should always be between 0.0 and 1.0."""
-        with patch(
-            "tools.scoring.classifier_tool.generate_reasoning"
-        ) as mock_reason:
+        with patch("tools.scoring.classifier_tool.generate_reasoning") as mock_reason:
             mock_reason.return_value = ReasoningResponse(reasoning="Test")
             result = classify_and_explain(
                 attribute_scores=ground_truth_scores,
@@ -576,9 +551,7 @@ class TestClassifyAndExplain:
                 tier_rationale="S",
             ),
         ]
-        with patch(
-            "tools.scoring.classifier_tool.generate_reasoning"
-        ) as mock_reason:
+        with patch("tools.scoring.classifier_tool.generate_reasoning") as mock_reason:
             mock_reason.return_value = ReasoningResponse(
                 reasoning="Main reasoning",
                 tech_lead_note="Special attention required",

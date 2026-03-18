@@ -27,7 +27,6 @@ from core.scoring.effort_table import (
 )
 from core.scoring.weight_matrix import exceeds_xl_ceiling, get_weight, map_value_to_tier
 
-
 # ============================================================================
 # SECTION A — Weight Matrix Edge Cases
 # ============================================================================
@@ -268,15 +267,15 @@ class TestClassifierComprehensive:
             confidence = get_confidence_score(score, tier)
 
             # Must be in valid range
-            assert 0.05 <= confidence <= 1.0, (
-                f"Confidence {confidence} for score {score} outside [0.05, 1.0]"
-            )
+            assert (
+                0.05 <= confidence <= 1.0
+            ), f"Confidence {confidence} for score {score} outside [0.05, 1.0]"
 
     def test_confidence_midpoint_vs_boundary(self):
         """Scores at midpoint should have higher confidence than boundaries."""
         # S tier (7-8): midpoint would be 7.5, so 7 is closer to boundary than 8
-        conf_7 = get_confidence_score(7, ComplexityTier.S)
-        conf_8 = get_confidence_score(8, ComplexityTier.S)
+        get_confidence_score(7, ComplexityTier.S)
+        get_confidence_score(8, ComplexityTier.S)
         # Both at boundary, roughly equal
 
         # M tier (9-15): midpoint is 12
@@ -462,15 +461,15 @@ class TestEffortCalculatorComprehensive:
 
         for tier, expected_min, expected_max, expected_sprints in test_cases:
             estimate = calculate_effort(tier)
-            assert estimate.total_min_days == expected_min, (
-                f"{tier}: expected min {expected_min}, got {estimate.total_min_days}"
-            )
-            assert estimate.total_max_days == expected_max, (
-                f"{tier}: expected max {expected_max}, got {estimate.total_max_days}"
-            )
-            assert estimate.sprints == expected_sprints, (
-                f"{tier}: expected sprints {expected_sprints}, got {estimate.sprints}"
-            )
+            assert (
+                estimate.total_min_days == expected_min
+            ), f"{tier}: expected min {expected_min}, got {estimate.total_min_days}"
+            assert (
+                estimate.total_max_days == expected_max
+            ), f"{tier}: expected max {expected_max}, got {estimate.total_max_days}"
+            assert (
+                estimate.sprints == expected_sprints
+            ), f"{tier}: expected sprints {expected_sprints}, got {estimate.sprints}"
 
     def test_rpa_tool_adjustment_all_tools(self):
         """For every RPATool, get_rpa_adjustment_factor must return valid multiplier."""
@@ -484,9 +483,9 @@ class TestEffortCalculatorComprehensive:
                     assert isinstance(factor, float)
 
                     # Must be in reasonable bounds
-                    assert 0.5 <= factor <= 2.0, (
-                        f"Tool {tool}: factor {factor} outside [0.5, 2.0]"
-                    )
+                    assert (
+                        0.5 <= factor <= 2.0
+                    ), f"Tool {tool}: factor {factor} outside [0.5, 2.0]"
 
     def test_s_tier_range_handling(self):
         """S tier must have ranges for both days and sprints."""
@@ -541,9 +540,7 @@ class TestEffortCalculatorComprehensive:
 
             # Must return dict with 4 phases
             assert len(base_effort) == 4
-            assert all(
-                isinstance(p, AssessmentPhase) for p in base_effort.keys()
-            )
+            assert all(isinstance(p, AssessmentPhase) for p in base_effort.keys())
 
             # All phases must have positive days
             for phase, effort in base_effort.items():

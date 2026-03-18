@@ -11,7 +11,8 @@ import pytest
 
 from core.models.document import ExtractedSection, ParsedDocument
 from llm.manager import LLMManager
-from tools.document.prompts import SECTION_IDENTIFICATION_SYSTEM
+from tools.document.docx_parser import parse_docx
+from tools.document.pdf_parser import parse_pdf
 from tools.document.section_identifier import (
     SectionResponse,
     SectionsListResponse,
@@ -19,9 +20,6 @@ from tools.document.section_identifier import (
     identify_sections_by_llm,
     identify_sections_by_pattern,
 )
-from tools.document.pdf_parser import parse_pdf
-from tools.document.docx_parser import parse_docx
-
 
 # ==================== FIXTURES ====================
 
@@ -29,7 +27,12 @@ from tools.document.docx_parser import parse_docx
 @pytest.fixture
 def sample_simple_pdf() -> Path:
     """Path to sample_simple.pdf test fixture."""
-    path = Path(__file__).parent.parent.parent / "data" / "sample_pdds" / "sample_simple.pdf"
+    path = (
+        Path(__file__).parent.parent.parent
+        / "data"
+        / "sample_pdds"
+        / "sample_simple.pdf"
+    )
     assert path.exists()
     return path
 
@@ -37,7 +40,12 @@ def sample_simple_pdf() -> Path:
 @pytest.fixture
 def sample_process_docx() -> Path:
     """Path to sample_process.docx test fixture."""
-    path = Path(__file__).parent.parent.parent / "data" / "sample_pdds" / "sample_process.docx"
+    path = (
+        Path(__file__).parent.parent.parent
+        / "data"
+        / "sample_pdds"
+        / "sample_process.docx"
+    )
     assert path.exists()
     return path
 
@@ -122,7 +130,9 @@ def test_pattern_matching_finds_headings(document_with_headings: ParsedDocument)
     assert any(s.title == "Process Overview" for s in sections)
 
 
-def test_pattern_matching_identifies_section_types(document_with_headings: ParsedDocument):
+def test_pattern_matching_identifies_section_types(
+    document_with_headings: ParsedDocument,
+):
     """Test pattern matching correctly identifies section types."""
     sections = identify_sections_by_pattern(document_with_headings)
     types_found = {s.section_type for s in sections}
@@ -137,7 +147,9 @@ def test_pattern_matching_assigns_confidence(document_with_headings: ParsedDocum
     assert any(s.confidence_score > 0.8 for s in sections)
 
 
-def test_pattern_matching_extracts_page_numbers(document_with_page_markers: ParsedDocument):
+def test_pattern_matching_extracts_page_numbers(
+    document_with_page_markers: ParsedDocument,
+):
     """Test pattern matching extracts page numbers from PDF markers."""
     sections = identify_sections_by_pattern(document_with_page_markers)
     # At least one section should have a page number
@@ -167,7 +179,9 @@ This is the rules section.
     assert len(sections) >= 1
 
 
-def test_pattern_matching_returns_empty_for_no_headings(document_without_headings: ParsedDocument):
+def test_pattern_matching_returns_empty_for_no_headings(
+    document_without_headings: ParsedDocument,
+):
     """Test pattern matching returns empty list for unstructured documents."""
     sections = identify_sections_by_pattern(document_without_headings)
     assert sections == []
@@ -334,7 +348,7 @@ def test_orchestration_calls_llm_when_pattern_insufficient(
         ]
     )
 
-    sections = identify_sections(document_without_headings, mock_manager)
+    identify_sections(document_without_headings, mock_manager)
 
     # Pattern matching returns 0 sections, so LLM should be called
     mock_manager.complete_structured.assert_called_once()
@@ -354,16 +368,20 @@ def test_orchestration_creates_default_llm_manager():
 
     with patch("tools.document.section_identifier.LLMManager") as mock_llm_class:
         mock_manager = MagicMock()
-        mock_manager.complete_structured.return_value = SectionsListResponse(sections=[])
+        mock_manager.complete_structured.return_value = SectionsListResponse(
+            sections=[]
+        )
         mock_llm_class.create_default.return_value = mock_manager
 
-        sections = identify_sections(doc, llm_manager=None)
+        identify_sections(doc, llm_manager=None)
 
         # Should create default manager when none provided and needed
         mock_llm_class.create_default.assert_called_once()
 
 
-def test_orchestration_merges_without_duplicates(document_with_headings: ParsedDocument):
+def test_orchestration_merges_without_duplicates(
+    document_with_headings: ParsedDocument,
+):
     """Test orchestration merges pattern and LLM sections without duplicates."""
     mock_manager = MagicMock(spec=LLMManager)
     # LLM returns a section with same title as pattern match
@@ -386,7 +404,9 @@ def test_orchestration_merges_without_duplicates(document_with_headings: ParsedD
     assert len(titles) == len(set(titles))
 
 
-def test_orchestration_fallback_to_full_document(document_without_headings: ParsedDocument):
+def test_orchestration_fallback_to_full_document(
+    document_without_headings: ParsedDocument,
+):
     """Test orchestration returns catch-all section when nothing found."""
     mock_manager = MagicMock(spec=LLMManager)
     mock_manager.complete_structured.return_value = SectionsListResponse(sections=[])
@@ -400,7 +420,9 @@ def test_orchestration_fallback_to_full_document(document_without_headings: Pars
     assert sections[0].confidence_score == 0.1
 
 
-def test_orchestration_sorts_sections_by_appearance(document_with_headings: ParsedDocument):
+def test_orchestration_sorts_sections_by_appearance(
+    document_with_headings: ParsedDocument,
+):
     """Test orchestration sorts sections by appearance in document."""
     sections = identify_sections(document_with_headings)
 

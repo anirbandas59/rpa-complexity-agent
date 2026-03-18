@@ -81,7 +81,9 @@ class BusinessRule(BaseModel):
         """
         # Check if creates_new_flow is in the data being validated
         if info.data.get("creates_new_flow") is True and v <= 2:
-            raise ValueError("Flow-creating rules must have more than 2 branch activities")
+            raise ValueError(
+                "Flow-creating rules must have more than 2 branch activities"
+            )
         return v
 
 

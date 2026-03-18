@@ -9,7 +9,6 @@ All LLM access via llm.manager.LLMManager abstraction.
 
 from __future__ import annotations
 
-import logging
 import re
 
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -38,10 +37,13 @@ class IdentifiedLayout(BaseModel):
 
     name: str = Field(..., description="Name of the layout/template")
     file_extension: str = Field(
-        default="other", description="File extension: xlsx|pdf|csv|xml|docx|txt|json|other"
+        default="other",
+        description="File extension: xlsx|pdf|csv|xml|docx|txt|json|other",
     )
     is_input: bool = Field(default=True, description="Whether bot reads this template")
-    is_output: bool = Field(default=False, description="Whether bot writes this template")
+    is_output: bool = Field(
+        default=False, description="Whether bot writes this template"
+    )
     template_type: str = Field(
         default="other",
         description="Type: input_template|output_report|schema_file|config_file|email_template|other",
@@ -127,9 +129,7 @@ class LayoutIdentificationLLMResponse(BaseModel):
     layouts: list[IdentifiedLayout] = Field(
         default_factory=list, description="List of identified layouts"
     )
-    total_count: int = Field(
-        default=0, description="Total count of layouts"
-    )
+    total_count: int = Field(default=0, description="Total count of layouts")
     detection_confidence: float = Field(
         default=0.5, description="Overall detection confidence"
     )
@@ -162,12 +162,8 @@ class LayoutIdentificationResult(BaseModel):
         ..., description="List of identified layouts"
     )
     total_count: int = Field(..., description="Total number of layouts")
-    detection_confidence: float = Field(
-        ..., description="Overall detection confidence"
-    )
-    exceeds_ceiling: bool = Field(
-        ..., description="Whether layout count exceeds 10"
-    )
+    detection_confidence: float = Field(..., description="Overall detection confidence")
+    exceeds_ceiling: bool = Field(..., description="Whether layout count exceeds 10")
     notes: str = Field(default="", description="Additional notes")
 
     def layout_names(self) -> list[str]:
@@ -176,7 +172,7 @@ class LayoutIdentificationResult(BaseModel):
         Returns:
             List of layout names
         """
-        return [l.name for l in self.layouts]
+        return [layout.name for layout in self.layouts]
 
     def input_count(self) -> int:
         """Get count of input layouts.
@@ -184,7 +180,7 @@ class LayoutIdentificationResult(BaseModel):
         Returns:
             Number of layouts where is_input=True
         """
-        return sum(1 for l in self.layouts if l.is_input)
+        return sum(1 for layout in self.layouts if layout.is_input)
 
     def output_count(self) -> int:
         """Get count of output layouts.
@@ -192,7 +188,7 @@ class LayoutIdentificationResult(BaseModel):
         Returns:
             Number of layouts where is_output=True
         """
-        return sum(1 for l in self.layouts if l.is_output)
+        return sum(1 for layout in self.layouts if layout.is_output)
 
 
 # ==================== HELPER FUNCTIONS ====================
@@ -266,7 +262,9 @@ def _deduplicate_layouts(
     return list(seen.values())
 
 
-def _filter_relevant_sections(sections: list[ExtractedSection]) -> list[ExtractedSection]:
+def _filter_relevant_sections(
+    sections: list[ExtractedSection],
+) -> list[ExtractedSection]:
     """Filter sections most relevant for layout identification.
 
     Priority order:
@@ -392,7 +390,9 @@ def identify_layouts(
             max_tokens=1200,
             session_id=session_id or "layout_identifier",
         )
-        result = response if isinstance(response, LayoutIdentificationLLMResponse) else None
+        result = (
+            response if isinstance(response, LayoutIdentificationLLMResponse) else None
+        )
     except LLMProviderError as e:
         logger.warning(f"Layout identification failed on first attempt, retrying: {e}")
         pass
@@ -411,7 +411,11 @@ def identify_layouts(
                 max_tokens=800,
                 session_id=(session_id or "layout_identifier") + "_retry",
             )
-            result = response if isinstance(response, LayoutIdentificationLLMResponse) else None
+            result = (
+                response
+                if isinstance(response, LayoutIdentificationLLMResponse)
+                else None
+            )
         except LLMProviderError as e:
             logger.error(f"Layout identification failed after retry: {e}")
             # Return empty result on both failures
@@ -444,7 +448,9 @@ def identify_layouts(
             f"— keeping {XL_LAYOUT_CEILING} with highest confidence"
         )
         # Sort by confidence descending, keep top 10
-        layouts_sorted = sorted(layouts, key=lambda l: l.confidence, reverse=True)
+        layouts_sorted = sorted(
+            layouts, key=lambda layout: layout.confidence, reverse=True
+        )
         layouts = layouts_sorted[:XL_LAYOUT_CEILING]
         exceeds_ceiling = True
     else:
@@ -453,8 +459,8 @@ def identify_layouts(
     # STEP 7: Log
     logger.info(
         f"[{session_id or 'layout_identifier'}] Layouts identified: {len(layouts)} total, "
-        f"{sum(1 for l in layouts if l.is_input)} inputs, "
-        f"{sum(1 for l in layouts if l.is_output)} outputs, "
+        f"{sum(1 for layout in layouts if layout.is_input)} inputs, "
+        f"{sum(1 for layout in layouts if layout.is_output)} outputs, "
         f"confidence={result.detection_confidence:.2f}"
     )
 

@@ -14,7 +14,6 @@ Exit code: 0 if all validations pass, 1 if any fail.
 """
 
 import sys
-import time
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -22,16 +21,17 @@ from unittest.mock import MagicMock, patch
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from config.logging_config import setup_logging
-from config.settings import get_settings
-from core.exceptions import LLMProviderError
-from llm.manager import LLMManager
-from llm.providers import BaseLLMProvider, LLMResponse
-from llm.providers.anthropic_provider import AnthropicProvider
-from llm.providers.ollama_provider import OllamaProvider
-from llm.providers.openai_provider import OpenAIProvider
-from llm.providers.watsonx_provider import WatsonxProvider
-from pydantic import BaseModel
+from pydantic import BaseModel  # noqa: E402
+
+from config.logging_config import setup_logging  # noqa: E402
+from config.settings import get_settings  # noqa: E402
+from core.exceptions import LLMProviderError  # noqa: E402
+from llm.manager import LLMManager  # noqa: E402
+from llm.providers import BaseLLMProvider, LLMResponse  # noqa: E402
+from llm.providers.anthropic_provider import AnthropicProvider  # noqa: E402
+from llm.providers.ollama_provider import OllamaProvider  # noqa: E402
+from llm.providers.openai_provider import OpenAIProvider  # noqa: E402
+from llm.providers.watsonx_provider import WatsonxProvider  # noqa: E402
 
 
 def print_header():
@@ -107,9 +107,8 @@ def validate_section_a():
         elif provider == "openai":
             api_key = settings.openai_api_key
 
-        a2_pass = (
-            provider == settings.default_llm_provider.lower()
-            and (api_key.startswith("sk-") or provider in ["ollama", "watsonx"])
+        a2_pass = provider == settings.default_llm_provider.lower() and (
+            api_key.startswith("sk-") or provider in ["ollama", "watsonx"]
         )
         print_result(
             "A2",
@@ -127,11 +126,7 @@ def validate_section_a():
     try:
         manager = LLMManager()
         info = manager.get_provider_info()
-        a3_pass = (
-            "provider" in info
-            and "model" in info
-            and info["call_count"] == "0"
-        )
+        a3_pass = "provider" in info and "model" in info and info["call_count"] == "0"
         print_result("A3", a3_pass, "LLMManager builds without error", "call_count=0")
     except Exception as e:
         print_result("A3", False, "LLMManager builds without error", f"exception: {e}")
@@ -202,6 +197,7 @@ def validate_section_b():
     try:
         with patch.dict("os.environ", {"ANTHROPIC_API_KEY": "sk-ant-test"}):
             from config.settings import get_settings
+
             get_settings.cache_clear()
 
             provider = AnthropicProvider(api_key="sk-ant-test", model="claude")
@@ -210,9 +206,7 @@ def validate_section_b():
                 field1: str
                 field2: int
 
-            result = provider.build_json_system_prompt(
-                "base prompt", TestSchema
-            )
+            result = provider.build_json_system_prompt("base prompt", TestSchema)
             b3_pass = (
                 "Respond with valid JSON only" in result
                 and "field1" in result
@@ -259,9 +253,7 @@ def validate_section_b():
 
         # Mismatched schema
         try:
-            provider.parse_json_response(
-                '{"wrong_field": "value"}', StatusSchema
-            )
+            provider.parse_json_response('{"wrong_field": "value"}', StatusSchema)
             b4_pass = False
         except LLMProviderError:
             b4_checks += 1
@@ -293,9 +285,10 @@ def validate_section_c():
 
     # C1: Retry on rate limit
     try:
-        with patch("llm.manager.get_settings") as mock_settings, patch(
-            "llm.manager.AnthropicProvider"
-        ) as mock_provider_class:
+        with (
+            patch("llm.manager.get_settings") as mock_settings,
+            patch("llm.manager.AnthropicProvider") as mock_provider_class,
+        ):
 
             mock_settings_obj = MagicMock()
             mock_settings_obj.default_llm_provider = "anthropic"
@@ -327,9 +320,7 @@ def validate_section_c():
             with patch("time.sleep"):
                 result = manager.complete("test")
 
-            c1_pass = (
-                result == "success" and mock_provider.complete.call_count == 3
-            )
+            c1_pass = result == "success" and mock_provider.complete.call_count == 3
             print_result(
                 "C1",
                 c1_pass,
@@ -344,9 +335,10 @@ def validate_section_c():
 
     # C2: No retry on auth error
     try:
-        with patch("llm.manager.get_settings") as mock_settings, patch(
-            "llm.manager.AnthropicProvider"
-        ) as mock_provider_class:
+        with (
+            patch("llm.manager.get_settings") as mock_settings,
+            patch("llm.manager.AnthropicProvider") as mock_provider_class,
+        ):
 
             mock_settings_obj = MagicMock()
             mock_settings_obj.default_llm_provider = "anthropic"
@@ -384,9 +376,10 @@ def validate_section_c():
 
     # C3: Raise after retry exhaustion
     try:
-        with patch("llm.manager.get_settings") as mock_settings, patch(
-            "llm.manager.AnthropicProvider"
-        ) as mock_provider_class:
+        with (
+            patch("llm.manager.get_settings") as mock_settings,
+            patch("llm.manager.AnthropicProvider") as mock_provider_class,
+        ):
 
             mock_settings_obj = MagicMock()
             mock_settings_obj.default_llm_provider = "anthropic"
@@ -397,9 +390,7 @@ def validate_section_c():
             mock_settings.return_value = mock_settings_obj
 
             mock_provider = MagicMock()
-            mock_provider.complete.side_effect = LLMProviderError(
-                "rate limit exceeded"
-            )
+            mock_provider.complete.side_effect = LLMProviderError("rate limit exceeded")
             mock_provider_class.return_value = mock_provider
 
             manager = LLMManager()
@@ -445,15 +436,15 @@ def validate_section_d():
             max_tokens=20,
             session_id="validate_llm_layer",
         )
-        
+
         result_upper = result.upper()
         d1_pass = (
             isinstance(result, str)
             and len(result) > 0
             and ("VALIDATION" in result_upper or "OK" in result_upper)
         )
-        
-        print_result("D1", d1_pass, "Real completion call", f"response OK")
+
+        print_result("D1", d1_pass, "Real completion call", "response OK")
         if d1_pass:
             print(f"    Actual response: {result[:100]}")
 
@@ -466,10 +457,7 @@ def validate_section_d():
     # D2: Provider info after live call
     try:
         info = manager.get_provider_info()
-        d2_pass = (
-            int(info["call_count"]) >= 1
-            and int(info["total_tokens"]) > 0
-        )
+        d2_pass = int(info["call_count"]) >= 1 and int(info["total_tokens"]) > 0
         print_result("D2", d2_pass, "Provider info after live call")
         if d2_pass:
             print(f"    Info: {info}")
@@ -482,6 +470,7 @@ def validate_section_d():
 
     # D3: Structured completion call
     try:
+
         class StatusResponse(BaseModel):
             status: str
             message: str

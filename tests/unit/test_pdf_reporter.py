@@ -19,7 +19,6 @@ from tools.output.pdf_reporter import (
     generate_pdf_report,
 )
 
-
 # ===========================================================================
 # FIXTURES
 # ===========================================================================
@@ -166,7 +165,9 @@ class TestHelperFunctions:
 class TestGeneratePdfReport:
     """Test generate_pdf_report function."""
 
-    def test_returns_string_path(self, sample_assessment_result, sample_timeline, tmp_path):
+    def test_returns_string_path(
+        self, sample_assessment_result, sample_timeline, tmp_path
+    ):
         """Test function returns string file path."""
         output_file = tmp_path / "test.pdf"
         result = generate_pdf_report(
@@ -176,7 +177,9 @@ class TestGeneratePdfReport:
         )
         assert isinstance(result, str)
 
-    def test_file_exists_at_returned_path(self, sample_assessment_result, sample_timeline, tmp_path):
+    def test_file_exists_at_returned_path(
+        self, sample_assessment_result, sample_timeline, tmp_path
+    ):
         """Test file exists at returned path."""
         output_file = tmp_path / "test.pdf"
         result = generate_pdf_report(
@@ -186,7 +189,9 @@ class TestGeneratePdfReport:
         )
         assert Path(result).exists()
 
-    def test_file_size_greater_than_3kb(self, sample_assessment_result, sample_timeline, tmp_path):
+    def test_file_size_greater_than_3kb(
+        self, sample_assessment_result, sample_timeline, tmp_path
+    ):
         """Test generated file is > 3KB (real PDF)."""
         output_file = tmp_path / "test.pdf"
         result = generate_pdf_report(
@@ -197,7 +202,9 @@ class TestGeneratePdfReport:
         file_size = Path(result).stat().st_size
         assert file_size > 3000, f"PDF too small: {file_size} bytes"
 
-    def test_output_path_parameter_respected(self, sample_assessment_result, sample_timeline, tmp_path):
+    def test_output_path_parameter_respected(
+        self, sample_assessment_result, sample_timeline, tmp_path
+    ):
         """Test output_path parameter is respected."""
         custom_path = tmp_path / "report.pdf"
         result = generate_pdf_report(
@@ -208,7 +215,9 @@ class TestGeneratePdfReport:
         assert result == str(custom_path)
         assert Path(result).exists()
 
-    def test_auto_generated_path_valid_format(self, sample_assessment_result, sample_timeline, tmp_path):
+    def test_auto_generated_path_valid_format(
+        self, sample_assessment_result, sample_timeline, tmp_path
+    ):
         """Test auto-generated path has valid format with timestamp."""
         # Create output directory
         output_dir = tmp_path / "outputs"
@@ -217,7 +226,7 @@ class TestGeneratePdfReport:
         # Mock the data/outputs directory in pdf_reporter
         import tools.output.pdf_reporter as pdf_mod
 
-        original_file = pdf_mod.Path(__file__).parent
+        pdf_mod.Path(__file__).parent
 
         # Generate with no output path - will create in default location
         result = generate_pdf_report(
@@ -229,7 +238,9 @@ class TestGeneratePdfReport:
         assert result.endswith(".pdf")
         assert Path(result).exists()
 
-    def test_path_ends_with_pdf(self, sample_assessment_result, sample_timeline, tmp_path):
+    def test_path_ends_with_pdf(
+        self, sample_assessment_result, sample_timeline, tmp_path
+    ):
         """Test returned path ends with .pdf."""
         output_file = tmp_path / "test.pdf"
         result = generate_pdf_report(
@@ -239,7 +250,9 @@ class TestGeneratePdfReport:
         )
         assert result.endswith(".pdf")
 
-    def test_error_on_invalid_directory(self, sample_assessment_result, sample_timeline):
+    def test_error_on_invalid_directory(
+        self, sample_assessment_result, sample_timeline
+    ):
         """Test OutputGenerationError raised if directory invalid."""
         invalid_path = "/nonexistent/path/that/does/not/exist/report.pdf"
 
@@ -259,7 +272,9 @@ class TestGeneratePdfReport:
 class TestPdfContent:
     """Test PDF file content and structure."""
 
-    def test_pdf_header_valid(self, sample_assessment_result, sample_timeline, tmp_path):
+    def test_pdf_header_valid(
+        self, sample_assessment_result, sample_timeline, tmp_path
+    ):
         """Test PDF file starts with valid %PDF header."""
         output_file = tmp_path / "test.pdf"
         result = generate_pdf_report(
@@ -273,7 +288,9 @@ class TestPdfContent:
 
         assert header == b"%PDF", "PDF header is invalid"
 
-    def test_file_size_between_bounds(self, sample_assessment_result, sample_timeline, tmp_path):
+    def test_file_size_between_bounds(
+        self, sample_assessment_result, sample_timeline, tmp_path
+    ):
         """Test file size is between 3KB and 2MB."""
         output_file = tmp_path / "test.pdf"
         result = generate_pdf_report(
@@ -294,7 +311,9 @@ class TestPdfContent:
 class TestGroundTruth:
     """Test ground truth case."""
 
-    def test_ground_truth_pdf_output(self, sample_assessment_result, sample_timeline, tmp_path):
+    def test_ground_truth_pdf_output(
+        self, sample_assessment_result, sample_timeline, tmp_path
+    ):
         """Test known project data generates valid PDF.
 
         Uses score=16, tier=L (ground truth).
@@ -331,7 +350,9 @@ class TestGroundTruth:
 class TestTechLeadReviewFlag:
     """Test tech lead review flag handling."""
 
-    def test_pdf_with_tech_lead_review_required(self, sample_assessment_result, sample_timeline, tmp_path):
+    def test_pdf_with_tech_lead_review_required(
+        self, sample_assessment_result, sample_timeline, tmp_path
+    ):
         """Test PDF generation when tech lead review is required."""
         sample_assessment_result.requires_tech_lead_review = True
 
@@ -354,7 +375,9 @@ class TestTechLeadReviewFlag:
 class TestXLTier:
     """Test XL complexity tier."""
 
-    def test_pdf_with_xl_tier(self, sample_assessment_result, sample_timeline, tmp_path):
+    def test_pdf_with_xl_tier(
+        self, sample_assessment_result, sample_timeline, tmp_path
+    ):
         """Test PDF generation for XL tier."""
         sample_assessment_result.complexity_tier = ComplexityTier.XL
         sample_assessment_result.total_score = 24
@@ -383,6 +406,7 @@ class TestTimelineWithManyFeatures:
         """Test PDF handles 20+ features gracefully."""
         # Create timeline with 20 features
         from datetime import timedelta
+
         features = []
         current_date = date(2026, 3, 20)
         for i in range(20):
@@ -424,7 +448,9 @@ class TestTimelineWithManyFeatures:
 class TestSessionIdLogging:
     """Test session ID is properly handled."""
 
-    def test_generate_pdf_with_session_id(self, sample_assessment_result, sample_timeline, tmp_path):
+    def test_generate_pdf_with_session_id(
+        self, sample_assessment_result, sample_timeline, tmp_path
+    ):
         """Test PDF generation with explicit session ID."""
         output_file = tmp_path / "test.pdf"
         result = generate_pdf_report(
@@ -446,7 +472,9 @@ class TestSessionIdLogging:
 class TestEdgeCases:
     """Test edge cases and boundary conditions."""
 
-    def test_very_long_project_name(self, sample_assessment_result, sample_timeline, tmp_path):
+    def test_very_long_project_name(
+        self, sample_assessment_result, sample_timeline, tmp_path
+    ):
         """Test handling of very long project names."""
         sample_assessment_result.project_name = "A" * 100
 
@@ -459,7 +487,9 @@ class TestEdgeCases:
 
         assert Path(result).exists()
 
-    def test_very_long_reasoning(self, sample_assessment_result, sample_timeline, tmp_path):
+    def test_very_long_reasoning(
+        self, sample_assessment_result, sample_timeline, tmp_path
+    ):
         """Test handling of very long reasoning text."""
         sample_assessment_result.reasoning = (
             "This is a very long reasoning paragraph. " * 20
@@ -509,7 +539,15 @@ class TestEdgeCases:
 
     def test_all_tiers(self, sample_assessment_result, sample_timeline, tmp_path):
         """Test PDF generation for all complexity tiers."""
-        for idx, tier in enumerate([ComplexityTier.XS, ComplexityTier.S, ComplexityTier.M, ComplexityTier.L, ComplexityTier.XL]):
+        for idx, tier in enumerate(
+            [
+                ComplexityTier.XS,
+                ComplexityTier.S,
+                ComplexityTier.M,
+                ComplexityTier.L,
+                ComplexityTier.XL,
+            ]
+        ):
             sample_assessment_result.complexity_tier = tier
             sample_assessment_result.total_score = 2 + (idx * 5)
 

@@ -19,14 +19,13 @@ from tools.analysis.interface_detector import (
     DetectedInterface,
     InterfaceDetectionLLMResponse,
     InterfaceDetectionResult,
+    _normalize_app_name,
     detect_interfaces,
     get_interface_count,
 )
-from tools.analysis.interface_detector import _normalize_app_name
 from tools.document.docx_parser import parse_docx
 from tools.document.entity_extractor import extract_entities
 from tools.document.section_identifier import identify_sections
-
 
 # ==================== FIXTURES ====================
 
@@ -34,7 +33,12 @@ from tools.document.section_identifier import identify_sections
 @pytest.fixture
 def sample_process_docx() -> Path:
     """Path to sample_process.docx test fixture."""
-    path = Path(__file__).parent.parent.parent / "data" / "sample_pdds" / "sample_process.docx"
+    path = (
+        Path(__file__).parent.parent.parent
+        / "data"
+        / "sample_pdds"
+        / "sample_process.docx"
+    )
     assert path.exists()
     return path
 
@@ -67,7 +71,10 @@ def mock_sections() -> list[ExtractedSection]:
 @pytest.fixture
 def mock_entity_result():
     """Create a mock entity extraction result."""
-    from tools.document.entity_extractor import EntityExtractionResponse, ConfidenceScores
+    from tools.document.entity_extractor import (
+        ConfidenceScores,
+        EntityExtractionResponse,
+    )
 
     return EntityExtractionResponse(
         applications=[
@@ -157,7 +164,6 @@ def test_deduplicate_interfaces_removes_sap_variants():
     from tools.analysis.interface_detector import _deduplicate_interfaces
 
     interfaces = [
-
         DetectedInterface(name="SAP", type="desktop", confidence=0.8),
         DetectedInterface(name="SAP ECC", type="desktop", confidence=0.9),
         DetectedInterface(name="Excel", type="desktop", confidence=0.85),
@@ -394,7 +400,10 @@ def test_detect_interfaces_returns_result_on_success(
 
 def test_detect_interfaces_source_merged():
     """Test source is 'merged' when both LLM and entity provide data."""
-    from tools.document.entity_extractor import EntityExtractionResponse, ConfidenceScores
+    from tools.document.entity_extractor import (
+        ConfidenceScores,
+        EntityExtractionResponse,
+    )
 
     sections = [
         ExtractedSection(
@@ -460,7 +469,10 @@ def test_detect_interfaces_source_llm_only():
 
 def test_detect_interfaces_source_entity_extractor_only():
     """Test source is 'entity_extractor_only' when LLM returns empty."""
-    from tools.document.entity_extractor import EntityExtractionResponse, ConfidenceScores
+    from tools.document.entity_extractor import (
+        ConfidenceScores,
+        EntityExtractionResponse,
+    )
 
     sections = [
         ExtractedSection(
@@ -518,9 +530,7 @@ def test_detect_interfaces_source_empty():
     mock_llm = MagicMock(spec=LLMManager)
     mock_llm.complete_structured.return_value = llm_response
 
-    result = detect_interfaces(
-        sections, entity_result=None, llm_manager=mock_llm
-    )
+    result = detect_interfaces(sections, entity_result=None, llm_manager=mock_llm)
 
     assert result.source == "empty"
     assert result.total_count == 0

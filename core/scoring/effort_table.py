@@ -19,8 +19,12 @@ from core.constants import AssessmentPhase, ComplexityTier, RPATool
 from core.exceptions import ScoringValidationError
 
 # Load effort table and tool factors at module level
-_EFFORT_TABLE_PATH = Path(__file__).parent.parent.parent / "data" / "reference" / "effort_table.json"
-_TOOL_FACTORS_PATH = Path(__file__).parent.parent.parent / "data" / "reference" / "rpa_tool_factors.json"
+_EFFORT_TABLE_PATH = (
+    Path(__file__).parent.parent.parent / "data" / "reference" / "effort_table.json"
+)
+_TOOL_FACTORS_PATH = (
+    Path(__file__).parent.parent.parent / "data" / "reference" / "rpa_tool_factors.json"
+)
 
 try:
     with open(_EFFORT_TABLE_PATH) as f:
@@ -105,9 +109,7 @@ class EffortEstimate(BaseModel):
     has_surface_automation: bool = Field(
         default=False, description="Uses surface/UI automation"
     )
-    has_api_integration: bool = Field(
-        default=False, description="Uses API integration"
-    )
+    has_api_integration: bool = Field(default=False, description="Uses API integration")
     adjustment_applied: bool = Field(
         default=False, description="RPA tool adjustment applied"
     )
@@ -297,9 +299,7 @@ def calculate_effort(
 
     # Step 3: Apply adjustment if needed
     adjusted_effort = (
-        apply_rpa_adjustment(base_effort, factor)
-        if factor != 1.0
-        else base_effort
+        apply_rpa_adjustment(base_effort, factor) if factor != 1.0 else base_effort
     )
 
     # Step 4: Calculate totals

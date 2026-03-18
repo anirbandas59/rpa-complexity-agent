@@ -18,19 +18,13 @@ class AttributeScore(BaseModel):
 
     model_config = ConfigDict(frozen=False)
 
-    attribute_id: int = Field(
-        ..., description="Attribute ID must be 1-5 inclusive"
-    )
+    attribute_id: int = Field(..., description="Attribute ID must be 1-5 inclusive")
     attribute_name: str = Field(..., description="Human-readable attribute name")
-    raw_value: int = Field(
-        ..., description="Actual count extracted from the PDD"
-    )
+    raw_value: int = Field(..., description="Actual count extracted from the PDD")
     selected_tier: ComplexityTier = Field(
         ..., description="Tier this raw value maps to"
     )
-    weight: int = Field(
-        ..., description="Point weight for this tier"
-    )
+    weight: int = Field(..., description="Point weight for this tier")
     tier_rationale: str = Field(
         ..., description="Explanation of why this tier was selected"
     )
@@ -117,9 +111,7 @@ class AssessmentResult(BaseModel):
     complexity_tier: ComplexityTier = Field(
         ..., description="Final XS/S/M/L/XL classification"
     )
-    confidence_score: float = Field(
-        ..., description="Confidence 0.0-1.0 in the result"
-    )
+    confidence_score: float = Field(..., description="Confidence 0.0-1.0 in the result")
     reasoning: str = Field(..., description="Narrative explanation of result")
     requires_tech_lead_review: bool = Field(
         default=False, description="True if XL or score > 25"

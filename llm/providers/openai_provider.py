@@ -68,7 +68,9 @@ class OpenAIProvider(BaseLLMProvider):
                 provider=self.get_provider_name(),
                 input_tokens=response.usage.prompt_tokens,
                 output_tokens=response.usage.completion_tokens,
-                raw_response=response.model_dump() if hasattr(response, 'model_dump') else {},
+                raw_response=(
+                    response.model_dump() if hasattr(response, "model_dump") else {}
+                ),
             )
         except openai.AuthenticationError as e:
             raise LLMProviderError(

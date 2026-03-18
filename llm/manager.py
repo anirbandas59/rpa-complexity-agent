@@ -9,12 +9,8 @@ All agents and tools route LLM calls through this manager — nothing outside
 llm/ ever imports a provider directly.
 """
 
-import json
 import logging
-import os
 import time
-from functools import lru_cache
-from typing import Any
 
 from pydantic import BaseModel
 
@@ -60,13 +56,11 @@ class LLMManager:
 
         # Use provided names or fall back to settings defaults
         self._provider_name = (
-            provider_name.lower() if provider_name
+            provider_name.lower()
+            if provider_name
             else settings.default_llm_provider.lower()
         )
-        self._model_name = (
-            model_name if model_name
-            else settings.default_llm_model
-        )
+        self._model_name = model_name if model_name else settings.default_llm_model
 
         # Initialize tracking
         self._call_count = 0
@@ -174,7 +168,7 @@ class LLMManager:
 
                 if is_rate_limit and attempt < max_retries - 1:
                     # Rate limit: exponential backoff and retry
-                    delay = base_delay * (2 ** attempt)
+                    delay = base_delay * (2**attempt)
                     self.logger.warning(
                         f"Rate limited by {self._provider_name}, retrying in "
                         f"{delay}s (attempt {attempt + 1}/{max_retries})"

@@ -255,7 +255,9 @@ def extract_entities(
                 max_tokens=1000,
                 session_id="entity_extractor_retry",
             )
-            result = response if isinstance(response, EntityExtractionResponse) else None
+            result = (
+                response if isinstance(response, EntityExtractionResponse) else None
+            )
         except LLMProviderError as e:
             logger.error(f"Entity extraction failed after retry: {e}")
             return EntityExtractionResponse()

@@ -96,21 +96,7 @@ def score_attributes(state: ComplexityAssessmentState) -> dict[str, Any]:
         return {"status": "failed", "errors": errors}
 
     try:
-        # Step 3: Parse RPA tool
-        rpa_tool_str = state.get("detected_rpa_tool", "unknown")
-        try:
-            rpa_tool = RPATool.from_string(rpa_tool_str)
-        except (ValueError, KeyError):
-            rpa_tool = RPATool.UNKNOWN
-            logger.debug(f"[{session_id}] Unknown RPA tool: {rpa_tool_str}")
-
-        # Step 4: Determine surface automation flag (conservative approximation)
-        has_surface = False
-        if raw_attributes.get("technology", 0) > 0 and rpa_tool != RPATool.UNKNOWN:
-            has_surface = True
-        # TODO: Improve by passing technology_result flags from Phase 4
-
-        # Step 5: Score all 5 attributes
+        # Step 3: Score all 5 attributes
         attribute_scores = []
         for attr_id in range(1, 6):
             # Map raw attribute name to dict key

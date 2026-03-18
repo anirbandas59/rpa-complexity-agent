@@ -15,18 +15,15 @@ No agents or LLM imports.
 
 from __future__ import annotations
 
-import logging
-from copy import copy
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
-from openpyxl.utils import get_column_letter
 
 from config.logging_config import get_logger
-from core.constants import ComplexityTier, RPATool
+from core.constants import ComplexityTier
 from core.exceptions import OutputGenerationError
 from core.models.assessment import AssessmentResult
 from core.models.timeline import DeliveryTimeline
@@ -40,32 +37,32 @@ logger = get_logger("excel_generator")
 # ===========================================================================
 
 COLORS = {
-    "XS": "92D050",      # Green
-    "S": "FFFFFF",       # White
-    "M": "FFFFFF",       # White
-    "L": "FF0000",       # Red
-    "XL": "7030A0",      # Purple
-    "header_blue": "5B9BD5",     # Header background
-    "score_row": "D9D9D9",       # Score/total row background
-    "completed": "BDEF88",       # Green for completed status
-    "in_progress": "FFE699",     # Yellow for in progress
-    "not_started": "FFFFFF",     # White for not started
+    "XS": "92D050",  # Green
+    "S": "FFFFFF",  # White
+    "M": "FFFFFF",  # White
+    "L": "FF0000",  # Red
+    "XL": "7030A0",  # Purple
+    "header_blue": "5B9BD5",  # Header background
+    "score_row": "D9D9D9",  # Score/total row background
+    "completed": "BDEF88",  # Green for completed status
+    "in_progress": "FFE699",  # Yellow for in progress
+    "not_started": "FFFFFF",  # White for not started
 }
 
 TIER_COLUMN_MAP = {
-    ComplexityTier.XS: "D",   # XS weight column
-    ComplexityTier.S: "G",    # S weight column
-    ComplexityTier.M: "J",    # M weight column
-    ComplexityTier.L: "M",    # L weight column
-    ComplexityTier.XL: "P",   # XL weight column
+    ComplexityTier.XS: "D",  # XS weight column
+    ComplexityTier.S: "G",  # S weight column
+    ComplexityTier.M: "J",  # M weight column
+    ComplexityTier.L: "M",  # L weight column
+    ComplexityTier.XL: "P",  # XL weight column
 }
 
 TIER_MARKER_MAP = {
-    ComplexityTier.XS: "E",   # XS marker column
-    ComplexityTier.S: "H",    # S marker column
-    ComplexityTier.M: "K",    # M marker column
-    ComplexityTier.L: "N",    # L marker column
-    ComplexityTier.XL: "Q",   # XL marker column
+    ComplexityTier.XS: "E",  # XS marker column
+    ComplexityTier.S: "H",  # S marker column
+    ComplexityTier.M: "K",  # M marker column
+    ComplexityTier.L: "N",  # L marker column
+    ComplexityTier.XL: "Q",  # XL marker column
 }
 
 # ===========================================================================
@@ -137,124 +134,209 @@ def _write_calculator_sheet(ws, assessment_result: AssessmentResult) -> None:
         assessment_result: Assessment result with scores and tier
     """
     # HEADER SECTION
+    # Template: sz=14, bold
     _set_cell_value(ws["D1"], "Sizing estimation for a single Automation", bold=True)
-    ws["D1"].font = Font(bold=True, size=12)
+    ws["D1"].font = Font(bold=True, size=14)
 
-    _set_cell_value(ws["D2"], "Instructions: ", bold=True)
-    _set_cell_value(ws["D3"], "1. Determine the complexity...", bold=True)
-    _set_cell_value(ws["D4"], "2. Select the appropriate response...", bold=True)
-    _set_cell_value(ws["D5"], "3. After all responses have been provided...", bold=True)
-    _set_cell_value(ws["D6"], "4. If your scenario exceeds the parameter...", bold=True)
+    # Template: sz=10, bold
+    for cell_ref, text in [
+        ("D2", "Instructions: "),
+        (
+            "D3",
+            "1. Determine the complexity of the project by going through each attribute below.",
+        ),
+        (
+            "D4",
+            "2. Select the appropriate response from the XS, S, M, L and XL column.",
+        ),
+        (
+            "D5",
+            "3. After all responses have been provided, pre-defined rules will calculate the score.",
+        ),
+        ("D6", "4. If your scenario exceeds the parameter given, consult a Tech Lead."),
+    ]:
+        ws[cell_ref].value = text
+        ws[cell_ref].font = Font(bold=True, size=10)
+        ws[cell_ref].alignment = Alignment(horizontal="left")
 
-    _set_cell_value(ws["D8"], "COMPLEXITY ATTRIBUTES", bold=True)
+    ws["D8"].value = "COMPLEXITY ATTRIBUTES"
+    ws["D8"].font = Font(bold=True, size=11)
+    ws["D8"].alignment = Alignment(horizontal="center")
 
-    # TIER HEADERS (row 9)
-    _set_cell_value(ws["D9"], "XS", bold=True, fill_color=COLORS["XS"])
-    _set_cell_value(ws["G9"], "S", bold=True)
-    _set_cell_value(ws["J9"], "M", bold=True)
-    _set_cell_value(ws["M9"], "L", bold=True, fill_color=COLORS["L"])
-    _set_cell_value(ws["P9"], "XL", bold=True, fill_color=COLORS["XL"])
+    # Template: sz=12, bold, center for all tier labels
+    for cell_ref, label, fill in [
+        ("D9", "XS", COLORS["XS"]),
+        ("G9", "S", None),
+        ("J9", "M", None),
+        ("M9", "L", COLORS["L"]),
+        ("P9", "XL", COLORS["XL"]),
+    ]:
+        ws[cell_ref].value = label
+        ws[cell_ref].font = Font(bold=True, size=12)
+        ws[cell_ref].alignment = Alignment(horizontal="center")
+        if fill:
+            ws[cell_ref].fill = PatternFill(start_color=f"FF{fill}", fill_type="solid")
 
-    # Marker cells
+    # Marker cells (sz=12, bold, center)
     for col in ["E", "H", "K", "N", "Q"]:
-        _set_cell_value(ws[f"{col}9"], "X", bold=True)
+        ws[f"{col}9"].value = "X"
+        ws[f"{col}9"].font = Font(bold=True, size=12)
+        ws[f"{col}9"].alignment = Alignment(horizontal="center")
 
-    # Weighting criteria headers
-    _set_cell_value(ws["S9"], "Weighting Criteria XS")
-    _set_cell_value(ws["T9"], "Weighting Criteria S")
-    _set_cell_value(ws["U9"], "Weighting Criteria M")
-    _set_cell_value(ws["V9"], "Weighting Criteria L")
-    _set_cell_value(ws["W9"], "Weighting Criteria XL")
+    # FIX: Template has 4 weighting columns S–V labeled S/M/L/XL — XS is excluded.
+    # Generated code was writing 5 columns S–W (XS/S/M/L/XL), off by one.
+    _set_cell_value(ws["S9"], "Weighting Criteria S")
+    _set_cell_value(ws["T9"], "Weighting Criteria M")
+    _set_cell_value(ws["U9"], "Weighting Criteria L")
+    _set_cell_value(ws["V9"], "Weighting Criteria XL")
 
     # ATTRIBUTE ROWS (10-14)
     attribute_descriptions = [
-        "Number of activities in the process",
-        "Business Rules (decision points)",
-        "Number of layouts / digital file templates",
-        "Number of target application / interfaces",
-        "Additional Technology",
+        "Number of activities in the process to be automated",
+        "Business Rules (decision points resulting in a new flow)",
+        "Number of digital layouts (templates) to be used by RPA",
+        "Requirement to interface with target applications / interfaces",
+        "Additional Technology in scope",
+    ]
+
+    # FIX: weight columns S–V map to S/M/L/XL (4 tiers, XS excluded per template).
+    # Template column R holds the max-weight value for each attribute.
+    # Marker cols E/H/K/N/Q → weight formula cols F/I/L/O/R (one to the right).
+    WEIGHT_COLS_ORDERED = ["S", "T", "U", "V"]  # S, M, L, XL weights
+    WEIGHT_TIERS_ORDERED = [
+        ComplexityTier.S,
+        ComplexityTier.M,
+        ComplexityTier.L,
+        ComplexityTier.XL,
     ]
 
     for score in assessment_result.attribute_scores:
         row = 9 + score.attribute_id
         attr_desc = attribute_descriptions[score.attribute_id - 1]
 
-        # Write description in column D
-        _set_cell_value(ws[f"D{row}"], attr_desc)
+        # Description in column D (sz=9, left-aligned, dark text — matches template)
+        ws[f"D{row}"].value = attr_desc
+        ws[f"D{row}"].font = Font(size=9, color="FF191919")
+        ws[f"D{row}"].alignment = Alignment(horizontal="left")
 
-        # Write description in selected tier column
+        # Description repeated in selected tier column (same style)
         tier_col = TIER_COLUMN_MAP[score.selected_tier]
-        _set_cell_value(ws[f"{tier_col}{row}"], attr_desc)
+        ws[f"{tier_col}{row}"].value = attr_desc
+        ws[f"{tier_col}{row}"].font = Font(size=9, color="FF191919")
+        ws[f"{tier_col}{row}"].alignment = Alignment(horizontal="left")
 
-        # Write X in marker cell
+        # "X" marker in the correct tier marker column
         marker_col = TIER_MARKER_MAP[score.selected_tier]
-        _set_cell_value(ws[f"{marker_col}{row}"], "X", bold=True)
+        ws[f"{marker_col}{row}"].value = "X"
+        ws[f"{marker_col}{row}"].font = Font(bold=True, size=9)
+        ws[f"{marker_col}{row}"].alignment = Alignment(horizontal="center")
 
-        # Write formulas in weight columns (F, I, L, O, R) - one column after marker
-        # These formulas check if the marker column has X and if so, sum the weight
+        # IF formulas in weight-formula columns F/I/L/O/R
+        # Each checks whether its paired marker column (E/H/K/N/Q) has "X"
         marker_cols = ["E", "H", "K", "N", "Q"]
-        weight_cols = ["F", "I", "L", "O", "R"]
-        weight_criteria = ["S", "T", "U", "V", "W"]
-        for marker_col, weight_col, criteria_col in zip(marker_cols, weight_cols, weight_criteria):
-            _set_cell_formula(ws[f"{weight_col}{row}"], f'IF({marker_col}{row}="X",{criteria_col}{row},"")')
+        formula_cols = ["F", "I", "L", "O", "R"]
+        # Criteria columns: XS→S9, S→T9 … mapped via WEIGHT_COLS_ORDERED (S/M/L/XL)
+        # E=XS uses S9 (XS weight stored there)? No — template stores XS weight in R col.
+        # Per template inspection: S10=2, T10=4, U10=6, V10=8, R10=8 (max weight = XL value)
+        # Formulas in F/I/L/O/R reference S/T/U/V respectively for S/M/L/XL;
+        # E/F pair (XS) is special — R column holds the weight used for XS selection.
+        # Re-reading template carefully:
+        # S10=2(XS wt), T10=4(was "S" label but holds M wt?), …
+        # Template: S9="Weighting Criteria S", T9="Criteria M", U9="Criteria L", V9="Criteria XL"
+        # So S col = S weight, T = M weight, U = L weight, V = XL weight.
+        # Formula cols F/I/L/O/R check markers E/H/K/N/Q and reference S/T/U/V/V respectively.
+        # R col (weight for XL) is referenced by both Q (XL marker) and also stored at R col.
+        # Actually per template R10=8 is separate — it's the "max weight" display.
+        # Keep it simple: mirror the template's IF formulas exactly.
+        # E→F uses S col (XS weight = S weight = 2 in template row 10)
+        # H→I uses T col (S weight = 4? No, T9="Criteria M"=4)
+        # The template stores: S10=2, T10=4, U10=6, V10=8 for attribute 1 (Activities)
+        # And R10=8 (separate display of max weight)
+        # Marker formulas: F10=IF(E10="X",S10,""), I10=IF(H10="X",T10,"") etc.
+        actual_criteria = ["S", "T", "U", "V", "V"]
+        for mc, fc, cc in zip(marker_cols, formula_cols, actual_criteria):
+            ws[f"{fc}{row}"].value = f'=IF({mc}{row}="X",{cc}{row},"")'
 
-        # Write weight values in S/T/U/V/W columns
-        weights = [
-            get_weight(score.attribute_id, ComplexityTier.XS),
-            get_weight(score.attribute_id, ComplexityTier.S),
-            get_weight(score.attribute_id, ComplexityTier.M),
-            get_weight(score.attribute_id, ComplexityTier.L),
-            get_weight(score.attribute_id, ComplexityTier.XL),
-        ]
-        for i, (col, weight) in enumerate(zip(["S", "T", "U", "V", "W"], weights)):
-            _set_cell_value(ws[f"{col}{row}"], weight)
+        # Weight values in S/T/U/V (S, M, L, XL weights — 4 columns, XS excluded)
+        for tier, col in zip(WEIGHT_TIERS_ORDERED, WEIGHT_COLS_ORDERED):
+            w = get_weight(score.attribute_id, tier)
+            ws[f"{col}{row}"].value = w
+            ws[f"{col}{row}"].alignment = Alignment(horizontal="center")
 
-    # TOTALS ROW (row 16)
-    for col in ["E", "H", "K", "N", "Q"]:
-        col_num = ord(col) - ord("A") + 1
-        col_letter = get_column_letter(col_num + 1)  # Weight column next to marker
-        _set_cell_formula(ws[f"{col}{16}"], f"COUNTIF({col}10:{col}14,\"X\")")
-        ws[f"{col}{16}"].font = Font(color="FF0000")  # Red font
-        _set_cell_formula(ws[f"{col_letter}{16}"], f"SUM({col_letter}10:{col_letter}14)")
-        ws[f"{col_letter}{16}"].font = Font(color="FF0000")
+        # R col: display the XL (max) weight — matches template R10=8, R11=8 etc.
+        ws[f"R{row}"].value = get_weight(score.attribute_id, ComplexityTier.XL)
+
+    # TOTALS ROW 16 — red font, COUNTIF in marker cols, SUM in formula cols
+    # Template: E16=COUNTIF, F16=SUM, H16=COUNTIF, I16=SUM, etc.
+    marker_cols = ["E", "H", "K", "N", "Q"]
+    formula_cols = ["F", "I", "L", "O", "R"]
+    red_font = Font(color="FFFF0000")
+    for mc, fc in zip(marker_cols, formula_cols):
+        ws[f"{mc}16"].value = f'=COUNTIF({mc}10:{mc}14,"X")'
+        ws[f"{mc}16"].font = red_font
+        ws[f"{fc}16"].value = f"=SUM({fc}10:{fc}14)"
+        ws[f"{fc}16"].font = red_font
 
     # SCORE AND CLASSIFICATION (rows 18-19)
     _set_cell_value(ws["D18"], "Score", bold=True)
-    _set_cell_formula(ws["G18"], "SUM(F16,I16,L16,O16,R16)")
+    ws["D18"].font = Font(bold=True, size=12)
 
-    _set_cell_value(ws["D19"], "Project Classification", bold=True)
-    _set_cell_value(
-        ws["G19"], assessment_result.complexity_tier.value, bold=True,
-        fill_color=_get_tier_color(assessment_result.complexity_tier)
-    )
+    # FIX: G18 score was absent. Write SUM formula with sz=12.
+    ws["G18"].value = "=SUM(F16,I16,L16,O16,R16)"
+    ws["G18"].font = Font(size=12)
+    ws["G18"].alignment = Alignment(horizontal="center")
 
-    # CLASSIFICATION LOOKUP TABLE (rows 21-24, columns X-Z)
+    ws["D19"].value = "Project Classification"
+    ws["D19"].font = Font(bold=True, size=12)
+
+    # FIX: G19 classification — sz=18, bold, no fill (template has no fill on G19).
+    # Previous code set fill_color which produced white fill (FFFFFFFF) overriding template.
+    tier_val = assessment_result.complexity_tier.value
+    ws["G19"].value = tier_val
+    ws["G19"].font = Font(bold=True, size=18)
+    ws["G19"].alignment = Alignment(horizontal="center")
+
+    # CLASSIFICATION LOOKUP TABLE — template places this at X11–Z14 (same rows as attributes)
+    # FIX: was written to rows 21–24 (10 rows too low). Corrected to rows 11–14.
     lookups = [
         (7, 8, "S"),
         (9, 15, "M"),
         (16, 22, "L"),
         (23, 28, "XL"),
     ]
-    for i, (min_score, max_score, tier) in enumerate(lookups, start=1):
-        row = 20 + i
-        _set_cell_value(ws[f"X{row}"], min_score)
-        _set_cell_value(ws[f"Y{row}"], max_score)
-        _set_cell_value(ws[f"Z{row}"], tier)
+    for i, (min_score, max_score, tier) in enumerate(lookups):
+        row = 11 + i  # rows 11, 12, 13, 14
+        ws[f"X{row}"].value = min_score
+        ws[f"X{row}"].font = Font(bold=True, size=9)
+        ws[f"X{row}"].alignment = Alignment(horizontal="center")
+        ws[f"Y{row}"].value = max_score
+        ws[f"Y{row}"].font = Font(bold=True, size=9)
+        ws[f"Y{row}"].alignment = Alignment(horizontal="center")
+        ws[f"Z{row}"].value = tier
+        ws[f"Z{row}"].font = Font(bold=True, size=9)
+        ws[f"Z{row}"].alignment = Alignment(horizontal="center")
+    # Also write the "Equivalence Chart" label at X10 (matches template X10)
+    ws["X10"].value = "Equivalence Chart"
+    ws["X10"].font = Font(bold=True, size=9)
+    ws["X10"].alignment = Alignment(horizontal="center")
 
     # EFFORT TABLE
-    _set_cell_value(ws["D22"], "Effort estimates in days from Define to Deploy", bold=True)
+    _set_cell_value(
+        ws["D22"], "Effort estimates in days from Define to Deploy", bold=True
+    )
     _set_cell_value(ws["D23"], "* Estimation of the effort needed...", bold=True)
     _set_cell_value(ws["D24"], "Actual timeline...", bold=True)
 
-    # Phase headers (row 25)
-    _set_cell_value(ws["B25"], "Phase", bold=True, fill_color="CCCCCC")
+    # Phase headers (row 25) — B25 has no fill per template
+    ws["B25"].value = "Phase"
+    ws["B25"].font = Font(bold=True)
+
     _set_cell_value(ws["D25"], "XS", bold=True, fill_color=COLORS["XS"])
     _set_cell_value(ws["G25"], "S", bold=True)
     _set_cell_value(ws["J25"], "M", bold=True)
     _set_cell_value(ws["M25"], "L", bold=True, fill_color=COLORS["L"])
     _set_cell_value(ws["P25"], "XL", bold=True, fill_color=COLORS["XL"])
 
-    # Effort data
     effort_phases = [
         ("Define *", 3, "7 - 15", 15, 20, 25),
         ("Design & Build", 5, "8 - 15", 25, 30, 40),
@@ -264,62 +346,86 @@ def _write_calculator_sheet(ws, assessment_result: AssessmentResult) -> None:
         ("2-weeks sprints", 1, "2 - 4", 5, 6, 8),
     ]
 
-    for i, (phase_name, xs, s, m, l, xl) in enumerate(effort_phases, start=1):
+    for i, (phase_name, xs, s, m, large, xl) in enumerate(effort_phases, start=1):
         row = 25 + i
         _set_cell_value(ws[f"B{row}"], phase_name)
         _set_cell_value(ws[f"D{row}"], xs)
         _set_cell_value(ws[f"G{row}"], s)
+        # FIX: M-tier values must NOT be bold — template treats all tiers equally here.
+        # Only the assessed tier column gets highlighted, not hardcoded bold.
         _set_cell_value(ws[f"J{row}"], m)
-        _set_cell_value(ws[f"M{row}"], l)
+        _set_cell_value(ws[f"M{row}"], large)
         _set_cell_value(ws[f"P{row}"], xl)
 
-        # Bold the column matching assessed tier
+        # Highlight the assessed tier column with bold
         tier_col = TIER_COLUMN_MAP.get(assessment_result.complexity_tier)
         if tier_col:
             ws[f"{tier_col}{row}"].font = Font(bold=True)
 
     # PROJECT CONTEXT BLOCK
+    # target_applications is not a field on AssessmentResult — derive from interface
+    # attribute raw_value count, or fall back to the assessment report reference.
     _set_cell_value(ws["B35"], "Applications: ")
     _set_cell_value(ws["C35"], "See assessment report")
-    _set_cell_value(ws["B36"], "Total")
+
+    # FIX: bold=True on Total labels to match template
+    _set_cell_value(ws["B36"], "Total", bold=True)
     if assessment_result.attribute_scores:
         interface_count = next(
-            (s.raw_value for s in assessment_result.attribute_scores if s.attribute_id == 4),
-            0
+            (
+                s.raw_value
+                for s in assessment_result.attribute_scores
+                if s.attribute_id == 4
+            ),
+            0,
         )
-        _set_cell_value(ws["C36"], interface_count)
+        _set_cell_value(ws["C36"], interface_count, bold=True)
 
-    _set_cell_value(ws["B38"], "Steps")
+    _set_cell_value(ws["B38"], "Steps", bold=True)
     _set_cell_value(ws["B39"], '(Sheet "Steps")')
-    _set_cell_value(ws["B41"], "Total")
-    _set_cell_value(ws["C41"], "See Steps sheet")
+
+    # FIX: C41 populated by generate_excel_report() after Steps sheet is written,
+    # using a cross-sheet reference to the actual Steps total row.
+    _set_cell_value(ws["B41"], "Total", bold=True)
 
     _set_cell_value(ws["B43"], "Business Rules", bold=True)
-    _set_cell_value(ws["B51"], "Total")
+    _set_cell_value(ws["B51"], "Total", bold=True)
     if assessment_result.attribute_scores:
         rules_count = next(
-            (s.raw_value for s in assessment_result.attribute_scores if s.attribute_id == 2),
-            0
+            (
+                s.raw_value
+                for s in assessment_result.attribute_scores
+                if s.attribute_id == 2
+            ),
+            0,
         )
-        _set_cell_value(ws["C51"], rules_count)
+        _set_cell_value(ws["C51"], rules_count, bold=True)
 
     _set_cell_value(ws["B53"], "Layouts: ")
-    _set_cell_value(ws["B60"], "Total")
+    _set_cell_value(ws["B60"], "Total", bold=True)
     if assessment_result.attribute_scores:
         layout_count = next(
-            (s.raw_value for s in assessment_result.attribute_scores if s.attribute_id == 3),
-            0
+            (
+                s.raw_value
+                for s in assessment_result.attribute_scores
+                if s.attribute_id == 3
+            ),
+            0,
         )
-        _set_cell_value(ws["C60"], layout_count)
+        _set_cell_value(ws["C60"], layout_count, bold=True)
 
     _set_cell_value(ws["B62"], "Additional Technology in scope", bold=True)
-    _set_cell_value(ws["B64"], "Total")
+    _set_cell_value(ws["B64"], "Total", bold=True)
     if assessment_result.attribute_scores:
         tech_count = next(
-            (s.raw_value for s in assessment_result.attribute_scores if s.attribute_id == 5),
-            0
+            (
+                s.raw_value
+                for s in assessment_result.attribute_scores
+                if s.attribute_id == 5
+            ),
+            0,
         )
-        _set_cell_value(ws["C64"], tech_count)
+        _set_cell_value(ws["C64"], tech_count, bold=True)
 
 
 # ===========================================================================
@@ -327,49 +433,40 @@ def _write_calculator_sheet(ws, assessment_result: AssessmentResult) -> None:
 # ===========================================================================
 
 
-def _write_steps_sheet(ws, decomposition: StepDecompositionResult) -> None:
+def _write_steps_sheet(ws, decomposition: StepDecompositionResult) -> int:
     """Write the Steps sheet.
 
-    Args:
-        ws: openpyxl worksheet
-        decomposition: Step decomposition result
+    Returns:
+        Row number of the TOTAL row (for cross-sheet reference in Calculator C41).
     """
-    # Sheet title
     _set_cell_value(ws["A1"], decomposition.project_name, bold=True)
 
-    # Header row
     _set_cell_value(ws["B2"], "Step description", bold=True, fill_color="CCCCCC")
     _set_cell_value(ws["C2"], "Step weight", bold=True, fill_color="CCCCCC")
-    _set_cell_value(ws["D2"], "Comment about reusability", bold=True, fill_color="CCCCCC")
+    _set_cell_value(
+        ws["D2"], "Comment about reusability", bold=True, fill_color="CCCCCC"
+    )
 
-    # Write branches and steps
     current_row = 3
-    total_weight = 0
-
     for branch in decomposition.branches:
-        # Branch header
         _set_cell_value(ws[f"A{current_row}"], branch.branch_name, bold=True)
         current_row += 1
-
-        # Steps in branch
         for step in branch.steps:
             _set_cell_value(ws[f"B{current_row}"], step.description)
             _set_cell_value(ws[f"C{current_row}"], round(step.weight, 1))
             _set_cell_value(ws[f"D{current_row}"], step.reusability_comment)
-            total_weight += step.weight
             current_row += 1
+        current_row += 1  # blank row between branches
 
-        # Blank row between branches
-        current_row += 1
-
-    # Subtotal row
     subtotal_row = current_row
-    _set_cell_formula(ws[f"C{subtotal_row}"], f"SUM(C3:C{current_row - 2})")
+    ws[f"C{subtotal_row}"].value = f"=SUM(C3:C{current_row - 2})"
 
-    # Total row
-    current_row += 2
-    _set_cell_value(ws[f"B{current_row}"], "TOTAL", bold=True)
-    _set_cell_formula(ws[f"C{current_row}"], f"SUM(C3:C{current_row - 3})")
+    total_row = current_row + 2
+    _set_cell_value(ws[f"B{total_row}"], "TOTAL", bold=True)
+    ws[f"C{total_row}"].value = f"=SUM(C3:C{total_row - 3})"
+    ws[f"C{total_row}"].font = Font(bold=True)
+
+    return total_row
 
 
 # ===========================================================================
@@ -388,13 +485,17 @@ def _write_timeline_sheet(
         assessment_result: Assessment result with project info
     """
     # PROJECT HEADER
-    _set_cell_value(ws["B3"], "PROJECT TITLE", bold=True, fill_color=COLORS["header_blue"])
+    _set_cell_value(
+        ws["B3"], "PROJECT TITLE", bold=True, fill_color=COLORS["header_blue"]
+    )
     _set_cell_value(ws["C3"], assessment_result.project_name)
 
     _set_cell_value(ws["B4"], "SQUAD", bold=True, fill_color=COLORS["header_blue"])
     _set_cell_value(ws["C4"], timeline.squad)
 
-    _set_cell_value(ws["B5"], "BUSINESS ANALYST", bold=True, fill_color=COLORS["header_blue"])
+    _set_cell_value(
+        ws["B5"], "BUSINESS ANALYST", bold=True, fill_color=COLORS["header_blue"]
+    )
     _set_cell_value(ws["C5"], timeline.business_analyst)
 
     _set_cell_value(ws["B6"], "DEVELOPER", bold=True, fill_color=COLORS["header_blue"])
@@ -501,14 +602,19 @@ def generate_excel_report(
     wb = Workbook()
 
     # Create/rename sheets
+    # wb.active is typed Optional[Worksheet] — assert non-None for type checker
     ws_calc = wb.active
+    assert ws_calc is not None, "Workbook has no active sheet"
     ws_calc.title = "Calculator"
     ws_steps = wb.create_sheet("Steps")
     ws_timeline = wb.create_sheet("Feature and delivery timeline")
 
-    # Write each sheet
+    # Write each sheet — Steps returns its total row so Calculator C41 can reference it
     _write_calculator_sheet(ws_calc, assessment_result)
-    _write_steps_sheet(ws_steps, decomposition)
+    steps_total_row = _write_steps_sheet(ws_steps, decomposition)
+    # FIX: C41 cross-sheet reference to actual Steps total row
+    ws_calc["C41"].value = f"=Steps!C{steps_total_row}"
+    ws_calc["C41"].font = Font(bold=True)
     _write_timeline_sheet(ws_timeline, timeline, assessment_result)
 
     # Determine output path

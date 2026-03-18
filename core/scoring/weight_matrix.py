@@ -17,7 +17,9 @@ from core.constants import ComplexityTier
 from core.exceptions import DocumentProcessingError, ScoringValidationError
 
 # Load weight matrix at module level
-_WEIGHT_MATRIX_PATH = Path(__file__).parent.parent.parent / "data" / "reference" / "weight_matrix.json"
+_WEIGHT_MATRIX_PATH = (
+    Path(__file__).parent.parent.parent / "data" / "reference" / "weight_matrix.json"
+)
 
 try:
     with open(_WEIGHT_MATRIX_PATH) as f:
@@ -46,10 +48,10 @@ _ATTRIBUTE_IDS = {v: k for k, v in _ATTRIBUTE_NAMES.items()}
 # XL ceilings for each attribute
 _XL_CEILINGS = {
     1: 60,  # Activities
-    2: 6,   # Business Rules
+    2: 6,  # Business Rules
     3: 10,  # Layouts
-    4: 8,   # Interfaces
-    5: 5,   # Technology
+    4: 8,  # Interfaces
+    5: 5,  # Technology
 }
 
 
@@ -255,5 +257,5 @@ def exceeds_xl_ceiling(attribute_id: int, raw_value: int) -> bool:
             context={"attribute_id": attribute_id},
         )
 
-    ceiling = _XL_CEILINGS.get(attribute_id, float('inf'))
+    ceiling = _XL_CEILINGS.get(attribute_id, float("inf"))
     return raw_value > ceiling

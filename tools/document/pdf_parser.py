@@ -7,7 +7,6 @@ Primary text extraction via fitz; table extraction via pdfplumber.
 
 from __future__ import annotations
 
-import logging
 import os
 from pathlib import Path
 from typing import Any
@@ -168,7 +167,15 @@ def _extract_metadata(doc: Any, path: Path) -> dict[str, str]:
     fitz_meta = doc.metadata or {}
 
     # Map fitz keys to standard names
-    for key in ["author", "title", "subject", "creator", "producer", "creationDate", "modDate"]:
+    for key in [
+        "author",
+        "title",
+        "subject",
+        "creator",
+        "producer",
+        "creationDate",
+        "modDate",
+    ]:
         value = fitz_meta.get(key)
         cleaned = _clean_metadata_value(value)
         if cleaned is not None:
@@ -234,7 +241,9 @@ def _extract_text(doc: Any) -> tuple[str, list[str]]:
             warnings.append(f"Failed to extract text from page {page_num + 1}: {e}")
 
     full_text = "".join(full_text_parts)
-    logger.debug(f"Extracted text: {len(full_text)} characters, {len(warnings)} warnings")
+    logger.debug(
+        f"Extracted text: {len(full_text)} characters, {len(warnings)} warnings"
+    )
     return full_text, warnings
 
 
@@ -274,7 +283,9 @@ def _extract_tables(path: Path, warnings: list[str]) -> list[list[dict[str, Any]
                             tables.append(dict_table)
 
                 except Exception as e:
-                    warnings.append(f"Table extraction failed on page {page_idx + 1}: {e}")
+                    warnings.append(
+                        f"Table extraction failed on page {page_idx + 1}: {e}"
+                    )
 
         finally:
             pdfplumber_doc.close()

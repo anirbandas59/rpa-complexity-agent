@@ -21,7 +21,6 @@ def show() -> None:
     confidence = result.get("confidence", 0.0)
     reasoning = result.get("reasoning", "")
     raw_attrs = result.get("raw_attributes", {})
-    output_files = result.get("output_files", {})
     warnings = result.get("warnings", [])
     errors = result.get("errors", [])
     rpa_tool = result.get("detected_rpa_tool", "unknown")
@@ -61,17 +60,11 @@ def show() -> None:
             if "business_rules" in raw_attrs:
                 attrs_list.append(("#2 Business Rules", raw_attrs["business_rules"]))
             if "layouts" in raw_attrs:
-                attrs_list.append(
-                    ("#3 Digital Layouts", raw_attrs["layouts"])
-                )
+                attrs_list.append(("#3 Digital Layouts", raw_attrs["layouts"]))
             if "interfaces" in raw_attrs:
-                attrs_list.append(
-                    ("#4 Target Interfaces", raw_attrs["interfaces"])
-                )
+                attrs_list.append(("#4 Target Interfaces", raw_attrs["interfaces"]))
             if "technology" in raw_attrs:
-                attrs_list.append(
-                    ("#5 Add. Technology", raw_attrs["technology"])
-                )
+                attrs_list.append(("#5 Add. Technology", raw_attrs["technology"]))
 
         if attrs_list:
             attrs_df = pd.DataFrame(attrs_list, columns=["Attribute", "Value"])
@@ -93,7 +86,6 @@ def show() -> None:
     with col_right:
         st.subheader("📅 Effort Estimate")
 
-        effort = result.get("effort_estimate", {})
         timeline = result.get("timeline_summary", {})
 
         total_hours = timeline.get("total_hours", 0)

@@ -299,6 +299,7 @@ class TestValidateAttributeScore:
         """Invalid attribute_id should raise during AttributeScore creation."""
         # Pydantic validates at creation time, not in validate_attribute_score
         from pydantic import ValidationError
+
         with pytest.raises(ValidationError):
             AttributeScore(
                 attribute_id=6,
@@ -326,6 +327,7 @@ class TestValidateAttributeScore:
         """Negative weight should raise during AttributeScore creation."""
         # Pydantic validates at creation time, not in validate_attribute_score
         from pydantic import ValidationError
+
         with pytest.raises(ValidationError):
             AttributeScore(
                 attribute_id=1,

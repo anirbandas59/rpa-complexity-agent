@@ -18,9 +18,7 @@ class DeliveryFeature(BaseModel):
 
     name: str = Field(..., description="Feature/task description")
     scope: str = Field(default="ORIGINAL", description="Scope category")
-    acceptance_status: str = Field(
-        default="APPROVED", description="Approval status"
-    )
+    acceptance_status: str = Field(default="APPROVED", description="Approval status")
     start_date: date = Field(..., description="Planned start date")
     end_date: date = Field(..., description="Planned end date")
     hours: float = Field(..., description="Estimated development hours")
@@ -32,9 +30,7 @@ class DeliveryFeature(BaseModel):
     development_status: str = Field(
         default="NOT STARTED", description="Current development status"
     )
-    remarks: str | None = Field(
-        default=None, description="Optional notes"
-    )
+    remarks: str | None = Field(default=None, description="Optional notes")
 
     @field_validator("hours")
     @classmethod
@@ -168,9 +164,7 @@ class DeliveryTimeline(BaseModel):
             Number of completed features
         """
         return sum(
-            1
-            for feature in self.features
-            if feature.development_status == "COMPLETED"
+            1 for feature in self.features if feature.development_status == "COMPLETED"
         )
 
     def in_progress_count(self) -> int:

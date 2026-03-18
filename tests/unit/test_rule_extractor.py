@@ -26,14 +26,18 @@ from tools.analysis.rule_extractor import (
 from tools.document.docx_parser import parse_docx
 from tools.document.section_identifier import identify_sections
 
-
 # ==================== FIXTURES ====================
 
 
 @pytest.fixture
 def sample_process_docx() -> Path:
     """Path to sample_process.docx test fixture."""
-    path = Path(__file__).parent.parent.parent / "data" / "sample_pdds" / "sample_process.docx"
+    path = (
+        Path(__file__).parent.parent.parent
+        / "data"
+        / "sample_pdds"
+        / "sample_process.docx"
+    )
     assert path.exists()
     return path
 

@@ -10,7 +10,6 @@ block others. Final status reflects overall analysis quality.
 
 from __future__ import annotations
 
-import logging
 from datetime import datetime
 from typing import Any, TypedDict
 
@@ -23,8 +22,8 @@ from core.models.document import ExtractedSection, ParsedDocument
 from tools.analysis.activity_analyzer import analyze_activities
 from tools.analysis.interface_detector import detect_interfaces
 from tools.analysis.layout_identifier import identify_layouts
-from tools.analysis.rule_extractor import extract_business_rules
 from tools.analysis.rpa_tool_detector import detect_rpa_tool
+from tools.analysis.rule_extractor import extract_business_rules
 from tools.analysis.technology_detector import detect_technology
 
 logger = get_logger("process_analysis_agent")
@@ -52,7 +51,9 @@ class ProcessAnalysisState(TypedDict, total=False):
     rpa_tool_result: Any  # RPAToolDetectionResult
 
     # Compiled attributes
-    raw_attributes: dict[str, int]  # activities, business_rules, layouts, interfaces, technology
+    raw_attributes: dict[
+        str, int
+    ]  # activities, business_rules, layouts, interfaces, technology
     detected_rpa_tool: str  # RPATool.value
 
     # Status
@@ -285,13 +286,21 @@ def compile_attributes(state: ProcessAnalysisState) -> dict[str, Any]:
     else:
         status = "success"
         # Check for partial results (zero count with low confidence)
-        if activities == 0 and activity_result and hasattr(activity_result, "count_confidence"):
+        if (
+            activities == 0
+            and activity_result
+            and hasattr(activity_result, "count_confidence")
+        ):
             try:
                 if float(activity_result.count_confidence) < 0.3:
                     status = "partial"
             except (TypeError, ValueError):
                 pass
-        if layouts == 0 and layout_result and hasattr(layout_result, "detection_confidence"):
+        if (
+            layouts == 0
+            and layout_result
+            and hasattr(layout_result, "detection_confidence")
+        ):
             try:
                 if float(layout_result.detection_confidence) < 0.3:
                     status = "partial"
@@ -312,7 +321,9 @@ def compile_attributes(state: ProcessAnalysisState) -> dict[str, Any]:
 
     if interface_result and hasattr(interface_result, "total_count"):
         if interface_result.total_count == 0:
-            warnings.append("No interfaces detected — verify document contains application references")
+            warnings.append(
+                "No interfaces detected — verify document contains application references"
+            )
 
     # Log
     logger.info(
@@ -363,7 +374,10 @@ def _build_graph() -> StateGraph:
 
     graph.set_conditional_entry_point(
         check_document,
-        {"compile_attributes": "compile_attributes", "run_activity_analysis": "run_activity_analysis"},
+        {
+            "compile_attributes": "compile_attributes",
+            "run_activity_analysis": "run_activity_analysis",
+        },
     )
 
     # Linear flow: all 5 analysis nodes -> rpa tool detection -> compile -> end
@@ -384,9 +398,7 @@ _graph = _build_graph()
 # ==================== PUBLIC API ====================
 
 
-def run(
-    document_state: dict, session_id: str | None = None
-) -> ProcessAnalysisState:
+def run(document_state: dict, session_id: str | None = None) -> ProcessAnalysisState:
     """Run Process Analysis Agent.
 
     Accepts output from Document Intelligence Agent and orchestrates
@@ -431,10 +443,13 @@ def run(
     try:
         logger.info(f"[{session_id}] Starting Process Analysis Agent")
         result = _graph.invoke(initial_state)
-        logger.info(f"[{session_id}] Process Analysis Agent completed with status={result.get('status')}")
+        logger.info(
+            f"[{session_id}] Process Analysis Agent completed with status={result.get('status')}"
+        )
         return result
     except Exception as e:
         logger.error(f"[{session_id}] Process Analysis Agent failed: {e}")
         raise AgentExecutionError(
-            f"Process Analysis Agent failed: {str(e)}", context={"session_id": session_id}
+            f"Process Analysis Agent failed: {str(e)}",
+            context={"session_id": session_id},
         )

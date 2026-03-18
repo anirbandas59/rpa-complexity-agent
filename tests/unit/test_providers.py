@@ -1,7 +1,5 @@
 """Tests for LLM provider abstraction layer."""
 
-import json
-from unittest import mock
 from unittest.mock import MagicMock, patch
 
 import httpx
@@ -14,7 +12,6 @@ from llm.providers.anthropic_provider import AnthropicProvider
 from llm.providers.ollama_provider import OllamaProvider
 from llm.providers.openai_provider import OpenAIProvider
 from llm.providers.watsonx_provider import WatsonxProvider
-
 
 # ============================================================================
 # Test Models
@@ -37,7 +34,9 @@ class StubProvider(BaseLLMProvider):
     def get_model_name(self) -> str:
         return "test-model"
 
-    def complete(self, prompt: str, system: str = "", max_tokens: int = 1000) -> LLMResponse:
+    def complete(
+        self, prompt: str, system: str = "", max_tokens: int = 1000
+    ) -> LLMResponse:
         return LLMResponse(
             content="test response",
             model="test-model",
@@ -203,6 +202,7 @@ class TestAnthropicProvider:
     @patch("llm.providers.anthropic_provider.anthropic.Anthropic")
     def test_complete_handles_authentication_error(self, mock_anthropic):
         """Test complete() handles AuthenticationError."""
+
         # Create a real exception class to raise
         class MockAuthError(Exception):
             pass
@@ -212,7 +212,10 @@ class TestAnthropicProvider:
         mock_anthropic.return_value = mock_client
 
         # Patch the exception class in the provider module
-        with patch("llm.providers.anthropic_provider.anthropic.AuthenticationError", MockAuthError):
+        with patch(
+            "llm.providers.anthropic_provider.anthropic.AuthenticationError",
+            MockAuthError,
+        ):
             provider = AnthropicProvider("bad-key", "claude-sonnet")
             with pytest.raises(LLMProviderError):
                 provider.complete("test")

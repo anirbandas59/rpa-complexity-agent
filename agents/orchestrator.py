@@ -21,7 +21,6 @@ Exposed API:
 from __future__ import annotations
 
 import json
-import logging
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Optional, TypedDict
@@ -245,9 +244,7 @@ def stage_process_analysis(state: PipelineState) -> dict[str, Any]:
 
     try:
         # Call Process Analysis Agent
-        pa_state = pa_run(
-            document_state=state["di_state"], session_id=session_id
-        )
+        pa_state = pa_run(document_state=state["di_state"], session_id=session_id)
 
         # Apply RPA tool override if specified
         if state["rpa_tool_override"] != "unknown":
@@ -459,7 +456,6 @@ def stage_generate_outputs(state: PipelineState) -> dict[str, Any]:
             "_decomposition_obj"
         )
         timeline: Optional[DeliveryTimeline] = state.get("_timeline_obj")
-
 
         if assessment_result is None or decomposition is None or timeline is None:
             raise AgentExecutionError(

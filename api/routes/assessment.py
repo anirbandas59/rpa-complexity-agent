@@ -5,19 +5,17 @@ Handles document uploads, background assessment processing, status polling,
 and output file downloads.
 """
 
-import uuid
-import logging
 import shutil
+import uuid
 from pathlib import Path
 from typing import Optional
 
-from fastapi import APIRouter, UploadFile, File, Form, BackgroundTasks, HTTPException
+from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from agents import run_assessment
 from config.logging_config import get_logger
-from config.settings import get_settings
 
 router = APIRouter(prefix="/api", tags=["assessment"])
 

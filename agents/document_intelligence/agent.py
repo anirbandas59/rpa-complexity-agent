@@ -267,8 +267,7 @@ def validate_output(state: DocumentIntelligenceState) -> dict[str, Any]:
         # d) Document validity
         if not parsed_doc.is_valid():
             warning = (
-                "Document failed validity check — "
-                "may be image-based or corrupted"
+                "Document failed validity check — " "may be image-based or corrupted"
             )
             warnings.append(warning)
             needs_review = True
@@ -315,9 +314,7 @@ def _build_graph() -> Any:
     Returns:
         Compiled StateGraph
     """
-    graph: StateGraph[DocumentIntelligenceState] = StateGraph(
-        DocumentIntelligenceState
-    )
+    graph: StateGraph[DocumentIntelligenceState] = StateGraph(DocumentIntelligenceState)
 
     # Add nodes
     graph.add_node("ingest_document", ingest_document)
@@ -353,9 +350,7 @@ _graph = _build_graph()
 # ==================== PUBLIC API ====================
 
 
-def run(
-    file_path: str, session_id: Optional[str] = None
-) -> Any:
+def run(file_path: str, session_id: Optional[str] = None) -> Any:
     """Run the Document Intelligence Agent.
 
     Parses document, identifies sections, extracts entities,
@@ -387,9 +382,7 @@ def run(
         "completed_at": "",
     }
 
-    logger.info(
-        f"[{session_id}] Document Intelligence Agent starting: {file_path}"
-    )
+    logger.info(f"[{session_id}] Document Intelligence Agent starting: {file_path}")
 
     try:
         final_state: Any = _graph.invoke(initial_state)

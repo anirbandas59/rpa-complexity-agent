@@ -9,11 +9,14 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from core.constants import ComplexityTier, ReusabilityTag, RPATool, StepWeight
+from core.constants import ComplexityTier, RPATool
 from core.models.assessment import AssessmentResult, AttributeScore
 from core.models.document import ExtractedSection
 from core.models.process import ProcessStep
-from tools.analysis.rule_extractor import BusinessRuleExtractionResult, ExtractedBusinessRule
+from tools.analysis.rule_extractor import (
+    BusinessRuleExtractionResult,
+    ExtractedBusinessRule,
+)
 from tools.output.step_decomposer import (
     BranchData,
     StepData,
@@ -229,9 +232,24 @@ class TestBranchDataProperties:
             branch_name="Main Flow",
             description="Primary steps",
             steps=[
-                StepData(step_number=1, description="Step 1", weight=1.0, reusability_tag="NONE"),
-                StepData(step_number=2, description="Step 2", weight=1.0, reusability_tag="NONE"),
-                StepData(step_number=3, description="Step 3", weight=0.5, reusability_tag="PARTIAL"),
+                StepData(
+                    step_number=1,
+                    description="Step 1",
+                    weight=1.0,
+                    reusability_tag="NONE",
+                ),
+                StepData(
+                    step_number=2,
+                    description="Step 2",
+                    weight=1.0,
+                    reusability_tag="NONE",
+                ),
+                StepData(
+                    step_number=3,
+                    description="Step 3",
+                    weight=0.5,
+                    reusability_tag="PARTIAL",
+                ),
             ],
         )
         assert branch.branch_total_weight == 2.5
@@ -340,7 +358,9 @@ class TestDecomposeSteps:
     """Test decompose_steps function."""
 
     @patch("tools.output.step_decomposer.LLMManager")
-    def test_decompose_steps_success(self, mock_llm_class, sample_sections, sample_assessment_result):
+    def test_decompose_steps_success(
+        self, mock_llm_class, sample_sections, sample_assessment_result
+    ):
         """Test successful step decomposition with mocked LLM."""
         # Setup mock LLM
         mock_llm = MagicMock()
@@ -352,15 +372,30 @@ class TestDecomposeSteps:
                     branch_name="Main Flow",
                     description="Primary process",
                     steps=[
-                        StepData(step_number=1, description="Receive order", weight=1.0, reusability_tag="NONE"),
-                        StepData(step_number=2, description="Validate", weight=1.0, reusability_tag="NONE"),
+                        StepData(
+                            step_number=1,
+                            description="Receive order",
+                            weight=1.0,
+                            reusability_tag="NONE",
+                        ),
+                        StepData(
+                            step_number=2,
+                            description="Validate",
+                            weight=1.0,
+                            reusability_tag="NONE",
+                        ),
                     ],
                 ),
                 BranchData(
                     branch_name="Error Handler",
                     description="Error handling",
                     steps=[
-                        StepData(step_number=1, description="Log error", weight=0.5, reusability_tag="PARTIAL"),
+                        StepData(
+                            step_number=1,
+                            description="Log error",
+                            weight=0.5,
+                            reusability_tag="PARTIAL",
+                        ),
                     ],
                 ),
             ],
@@ -386,7 +421,11 @@ class TestDecomposeSteps:
 
     @patch("tools.output.step_decomposer.LLMManager")
     def test_decompose_steps_with_rules(
-        self, mock_llm_class, sample_sections, sample_assessment_result, sample_rule_result
+        self,
+        mock_llm_class,
+        sample_sections,
+        sample_assessment_result,
+        sample_rule_result,
     ):
         """Test decomposition includes business rules in context."""
         mock_llm = MagicMock()
@@ -412,7 +451,7 @@ class TestDecomposeSteps:
 
         mock_llm.call_with_schema.return_value = llm_response
 
-        result = decompose_steps(
+        decompose_steps(
             sections=sample_sections,
             assessment_result=sample_assessment_result,
             rule_result=sample_rule_result,
@@ -500,13 +539,30 @@ class TestStepDecompositionLLMResponse:
                 BranchData(
                     branch_name="B1",
                     steps=[
-                        StepData(step_number=1, description="S1", weight=1.0, reusability_tag="NONE"),
-                        StepData(step_number=2, description="S2", weight=2.0, reusability_tag="NONE"),
+                        StepData(
+                            step_number=1,
+                            description="S1",
+                            weight=1.0,
+                            reusability_tag="NONE",
+                        ),
+                        StepData(
+                            step_number=2,
+                            description="S2",
+                            weight=2.0,
+                            reusability_tag="NONE",
+                        ),
                     ],
                 ),
                 BranchData(
                     branch_name="B2",
-                    steps=[StepData(step_number=1, description="S3", weight=0.5, reusability_tag="PARTIAL")],
+                    steps=[
+                        StepData(
+                            step_number=1,
+                            description="S3",
+                            weight=0.5,
+                            reusability_tag="PARTIAL",
+                        )
+                    ],
                 ),
             ],
             total_weighted_steps=999.0,  # Incorrect value

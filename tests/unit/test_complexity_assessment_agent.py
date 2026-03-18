@@ -5,20 +5,17 @@ Comprehensive tests for the agent orchestration, node execution,
 and end-to-end integration with Phase 4 (Process Analysis).
 """
 
-from unittest.mock import MagicMock, patch
-from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
 from agents.complexity_assessment.agent import (
-    ComplexityAssessmentState,
     classify_complexity,
     run,
     score_attributes,
 )
 from core.constants import ComplexityTier, RPATool
 from core.models.assessment import AssessmentResult, AttributeScore
-
 
 # ==================== FIXTURES ====================
 
@@ -358,11 +355,12 @@ class TestRunFunction:
 
     def test_returns_state_dict(self, process_analysis_state):
         """Should return ComplexityAssessmentState dict."""
-        with patch(
-            "agents.complexity_assessment.agent.score_attributes"
-        ) as mock_score, patch(
-            "agents.complexity_assessment.agent.classify_complexity"
-        ) as mock_classify:
+        with (
+            patch("agents.complexity_assessment.agent.score_attributes") as mock_score,
+            patch(
+                "agents.complexity_assessment.agent.classify_complexity"
+            ) as mock_classify,
+        ):
             mock_score.return_value = {
                 "attribute_scores": [
                     AttributeScore(
@@ -409,40 +407,34 @@ class TestRunFunction:
 
     def test_inherits_session_id(self, process_analysis_state):
         """Should inherit session_id from input."""
-        with patch(
-            "agents.complexity_assessment.agent._graph.invoke"
-        ) as mock_invoke:
+        with patch("agents.complexity_assessment.agent._graph.invoke") as mock_invoke:
             mock_invoke.return_value = {
                 **process_analysis_state,
                 "assessment_result": None,
                 "attribute_scores": [],
                 "status": "success",
             }
-            result = run(process_analysis_state)
+            run(process_analysis_state)
             # The state passed to graph should have inherited session_id
             call_state = mock_invoke.call_args[0][0]
             assert call_state["session_id"] == "test_session_123"
 
     def test_uses_provided_session_id(self, process_analysis_state):
         """Should use provided session_id."""
-        with patch(
-            "agents.complexity_assessment.agent._graph.invoke"
-        ) as mock_invoke:
+        with patch("agents.complexity_assessment.agent._graph.invoke") as mock_invoke:
             mock_invoke.return_value = {
                 **process_analysis_state,
                 "assessment_result": None,
                 "attribute_scores": [],
                 "status": "success",
             }
-            result = run(process_analysis_state, session_id="custom_session")
+            run(process_analysis_state, session_id="custom_session")
             call_state = mock_invoke.call_args[0][0]
             assert call_state["session_id"] == "custom_session"
 
     def test_inherits_file_path(self, process_analysis_state):
         """Should inherit file_path from input."""
-        with patch(
-            "agents.complexity_assessment.agent._graph.invoke"
-        ) as mock_invoke:
+        with patch("agents.complexity_assessment.agent._graph.invoke") as mock_invoke:
             mock_invoke.return_value = {
                 **process_analysis_state,
                 "assessment_result": None,
@@ -455,9 +447,7 @@ class TestRunFunction:
 
     def test_inherits_raw_attributes(self, process_analysis_state):
         """Should inherit raw_attributes from input."""
-        with patch(
-            "agents.complexity_assessment.agent._graph.invoke"
-        ) as mock_invoke:
+        with patch("agents.complexity_assessment.agent._graph.invoke") as mock_invoke:
             mock_invoke.return_value = {
                 **process_analysis_state,
                 "assessment_result": None,
@@ -472,9 +462,7 @@ class TestRunFunction:
         """Should inherit warnings and errors from input."""
         process_analysis_state["warnings"] = ["Warning 1"]
         process_analysis_state["errors"] = ["Error 1"]
-        with patch(
-            "agents.complexity_assessment.agent._graph.invoke"
-        ) as mock_invoke:
+        with patch("agents.complexity_assessment.agent._graph.invoke") as mock_invoke:
             mock_invoke.return_value = {
                 **process_analysis_state,
                 "assessment_result": None,
@@ -502,7 +490,6 @@ class TestComplexityAssessmentIntegration:
         This is a simplified integration test that does not require the
         full Document Intelligence and Process Analysis agents.
         """
-        from datetime import datetime
 
         # Run the agent with mocked LLM
         with patch(
@@ -517,9 +504,7 @@ class TestComplexityAssessmentIntegration:
                     "Multiple business rules",
                     "Multi-layout UI interaction",
                 ],
-                simplification_opportunities=[
-                    "Consolidate similar business rules"
-                ],
+                simplification_opportunities=["Consolidate similar business rules"],
                 tech_lead_note="",
             )
 
@@ -547,7 +532,7 @@ class TestComplexityAssessmentIntegration:
                 print(assessment.score_summary)
                 print("\nReasoning:")
                 print(assessment.reasoning[:200] + "...")
-                print(f"\nKey Details:")
+                print("\nKey Details:")
                 print(f"  Tier: {assessment.complexity_tier.value}")
                 print(f"  Score: {assessment.total_score}/28")
                 print(f"  Confidence: {assessment.confidence_score:.0%}")

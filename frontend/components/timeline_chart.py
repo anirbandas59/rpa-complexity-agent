@@ -11,7 +11,6 @@ def render_effort_table(result: dict) -> None:
     Args:
         result: Assessment result dict
     """
-    effort = result.get("effort_estimate", {})
     timeline = result.get("timeline_summary", {})
 
     if not timeline:
@@ -49,7 +48,5 @@ def render_effort_table(result: dict) -> None:
     total_sp = timeline.get("total_sp", 0)
     feature_count = timeline.get("feature_count", 0)
 
-    summary_text = (
-        f"**Total Effort:** {total_hours:.0f}h / {total_sp:.1f} SP / {feature_count} features"
-    )
+    summary_text = f"**Total Effort:** {total_hours:.0f}h / {total_sp:.1f} SP / {feature_count} features"
     st.caption(summary_text)

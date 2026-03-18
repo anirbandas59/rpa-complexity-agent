@@ -9,9 +9,6 @@ All LLM access via llm.manager.LLMManager abstraction.
 
 from __future__ import annotations
 
-import logging
-import re
-
 from pydantic import BaseModel, Field, field_validator
 
 from config.logging_config import get_logger
@@ -149,9 +146,7 @@ class TechnologyDetectionResult(BaseModel):
         ..., description="List of detected additional technologies"
     )
     total_count: int = Field(..., description="Total number of technologies")
-    detection_confidence: float = Field(
-        ..., description="Overall detection confidence"
-    )
+    detection_confidence: float = Field(..., description="Overall detection confidence")
     excluded_items: list[ExcludedTechnology] = Field(
         default_factory=list, description="Excluded items"
     )
@@ -205,7 +200,9 @@ class TechnologyDetectionResult(BaseModel):
 # ==================== HELPER FUNCTIONS ====================
 
 
-def _filter_relevant_sections(sections: list[ExtractedSection]) -> list[ExtractedSection]:
+def _filter_relevant_sections(
+    sections: list[ExtractedSection],
+) -> list[ExtractedSection]:
     """Filter sections most relevant for technology detection.
 
     Priority order:
@@ -248,7 +245,8 @@ def _filter_relevant_sections(sections: list[ExtractedSection]) -> list[Extracte
 
     # Fallback: return all sections except excluded types
     return [
-        s for s in sections
+        s
+        for s in sections
         if s.section_type not in {"business_rules", "exceptions", "inputs_outputs"}
     ]
 
@@ -379,7 +377,11 @@ def detect_technology(
     sections_text = _prepare_sections_text(relevant, max_chars=4000)
 
     # STEP 3: Incorporate entity_result if provided
-    if entity_result and hasattr(entity_result, "technologies") and entity_result.technologies:
+    if (
+        entity_result
+        and hasattr(entity_result, "technologies")
+        and entity_result.technologies
+    ):
         entity_tech_text = "\n\n## Previously Identified Technologies\n"
         for tech in entity_result.technologies:
             entity_tech_text += f"{tech.name} ({tech.category}): {tech.notes}\n"
@@ -400,7 +402,9 @@ def detect_technology(
             max_tokens=1500,
             session_id=session_id or "technology_detector",
         )
-        result = response if isinstance(response, TechnologyDetectionLLMResponse) else None
+        result = (
+            response if isinstance(response, TechnologyDetectionLLMResponse) else None
+        )
     except LLMProviderError as e:
         logger.warning(f"Technology detection failed on first attempt, retrying: {e}")
         pass
@@ -419,7 +423,11 @@ def detect_technology(
                 max_tokens=800,
                 session_id=(session_id or "technology_detector") + "_retry",
             )
-            result = response if isinstance(response, TechnologyDetectionLLMResponse) else None
+            result = (
+                response
+                if isinstance(response, TechnologyDetectionLLMResponse)
+                else None
+            )
         except LLMProviderError as e:
             logger.error(f"Technology detection failed after retry: {e}")
             # Return empty result on both failures
@@ -455,7 +463,9 @@ def detect_technology(
             f"with highest confidence"
         )
         # Sort by confidence descending, keep top 5
-        technologies_sorted = sorted(technologies, key=lambda t: t.confidence, reverse=True)
+        technologies_sorted = sorted(
+            technologies, key=lambda t: t.confidence, reverse=True
+        )
         technologies = technologies_sorted[:XL_TECHNOLOGY_CEILING]
 
     # b) Detect flags

@@ -6,7 +6,13 @@ from pathlib import Path
 import pytest
 
 REFERENCE_DIR = Path(__file__).parent.parent.parent / "data" / "reference"
-EXPECTED_ATTRIBUTES = {"activities", "business_rules", "layouts", "interfaces", "technology"}
+EXPECTED_ATTRIBUTES = {
+    "activities",
+    "business_rules",
+    "layouts",
+    "interfaces",
+    "technology",
+}
 EXPECTED_TIERS = {"XS", "S", "M", "L", "XL"}
 EXPECTED_TOOLS = {"blue_prism", "uipath", "power_automate", "aa360"}
 
@@ -93,7 +99,9 @@ def test_effort_table_s_values_are_ranges(effort_table):
     assert s["total"] == [20, 40]
     assert s["sprints"] == [2, 4]
     for key in ("define", "build", "uat", "deploy", "total", "sprints"):
-        assert isinstance(s[key], list) and len(s[key]) == 2, f"S.{key} should be [min, max]"
+        assert (
+            isinstance(s[key], list) and len(s[key]) == 2
+        ), f"S.{key} should be [min, max]"
 
 
 def test_effort_table_m_values(effort_table):
@@ -103,9 +111,9 @@ def test_effort_table_m_values(effort_table):
 
 
 def test_effort_table_l_values(effort_table):
-    l = effort_table["efforts"]["L"]
-    assert l["total"] == 60
-    assert l["sprints"] == 6
+    large_effort = effort_table["efforts"]["L"]
+    assert large_effort["total"] == 60
+    assert large_effort["sprints"] == 6
 
 
 def test_effort_table_xl_values(effort_table):

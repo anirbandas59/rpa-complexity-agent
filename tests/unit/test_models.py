@@ -10,7 +10,7 @@ from datetime import date, datetime, timezone
 import pytest
 from pydantic import ValidationError
 
-from core.constants import AssessmentPhase, ComplexityTier, ReusabilityTag, RPATool, StepWeight
+from core.constants import ComplexityTier, ReusabilityTag, RPATool, StepWeight
 from core.models.assessment import (
     AssessmentInput,
     AssessmentResult,
@@ -21,7 +21,6 @@ from core.models.process import (
     BusinessRule,
     DigitalLayout,
     ProcessStep,
-    TargetInterface,
 )
 from core.models.timeline import DeliveryFeature, DeliveryTimeline
 

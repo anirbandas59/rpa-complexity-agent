@@ -6,15 +6,13 @@ status polling, downloads, and the full upload-to-result flow.
 """
 
 import io
-import json
-from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
 
 from api.main import app
-from api.routes.assessment import _sessions, AssessmentRequest
+from api.routes.assessment import AssessmentRequest, _sessions
 from core.exceptions import AgentExecutionError
 
 # Test client
@@ -153,7 +151,13 @@ def test_post_assess_valid_docx(mock_task, sample_docx_file):
     """POST /api/assess with valid DOCX returns queued response."""
     response = client.post(
         "/api/assess",
-        files={"file": ("test.docx", sample_docx_file, "application/vnd.openxmlformats-officedocument.wordprocessingml.document")},
+        files={
+            "file": (
+                "test.docx",
+                sample_docx_file,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            )
+        },
         data={"rpa_tool": "blue_prism"},
     )
 
@@ -526,6 +530,7 @@ def test_full_pipeline_with_mock_assessment(sample_docx_file, tmp_path, monkeypa
 
         # Manually run the background task (since we're not in async context)
         from api.routes.assessment import _run_assessment_task
+
         request = AssessmentRequest(rpa_tool="uipath")
         _run_assessment_task(
             session_id,

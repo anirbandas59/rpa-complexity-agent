@@ -38,7 +38,9 @@ def render_tier_badge(tier: str) -> None:
         },
     }
 
-    style = tier_styles.get(tier, {"bg": "#808080", "text": "#ffffff", "label": "Unknown"})
+    style = tier_styles.get(
+        tier, {"bg": "#808080", "text": "#ffffff", "label": "Unknown"}
+    )
 
     st.markdown(
         f"""

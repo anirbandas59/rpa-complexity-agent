@@ -10,6 +10,7 @@ This module takes a list of AttributeScore objects and produces:
 Pure Python — no LLM calls.
 """
 
+from config.logging_config import get_logger
 from core.constants import ComplexityTier
 from core.exceptions import ScoringValidationError
 from core.models.assessment import AttributeScore
@@ -18,7 +19,6 @@ from core.scoring.classifier import (
     get_confidence_score,
 )
 from core.scoring.weight_matrix import exceeds_xl_ceiling
-from config.logging_config import get_logger
 
 logger = get_logger("weighted_calculator")
 

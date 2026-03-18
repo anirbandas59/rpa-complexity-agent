@@ -64,7 +64,9 @@ class AnthropicProvider(BaseLLMProvider):
                 provider=self.get_provider_name(),
                 input_tokens=response.usage.input_tokens,
                 output_tokens=response.usage.output_tokens,
-                raw_response=response.model_dump() if hasattr(response, 'model_dump') else {},
+                raw_response=(
+                    response.model_dump() if hasattr(response, "model_dump") else {}
+                ),
             )
         except anthropic.AuthenticationError as e:
             raise LLMProviderError(

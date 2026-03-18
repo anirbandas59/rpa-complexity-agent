@@ -9,8 +9,6 @@ All LLM access via llm.manager.LLMManager abstraction.
 
 from __future__ import annotations
 
-import logging
-
 from pydantic import BaseModel, Field, field_validator
 
 from config.logging_config import get_logger
@@ -35,8 +33,12 @@ XL_RULE_CEILING = 6
 class ExtractedBusinessRule(BaseModel):
     """Represents a flow-creating business rule."""
 
-    description: str = Field(..., description="Description of the rule and its new flow")
-    condition: str = Field(default="", description="The IF condition that triggers this rule")
+    description: str = Field(
+        ..., description="Description of the rule and its new flow"
+    )
+    condition: str = Field(
+        default="", description="The IF condition that triggers this rule"
+    )
     branch_name: str = Field(..., description="Short name for this branch/flow")
     estimated_branch_activities: int = Field(
         ..., description="Number of activities in the new flow"
@@ -90,9 +92,7 @@ class NonQualifyingRule(BaseModel):
     """Represents a rule that was considered but excluded."""
 
     description: str = Field(..., description="Description of the rule")
-    reason_excluded: str = Field(
-        default="", description="Why it does not qualify"
-    )
+    reason_excluded: str = Field(default="", description="Why it does not qualify")
 
 
 class BusinessRuleExtractionLLMResponse(BaseModel):
@@ -166,7 +166,9 @@ class BusinessRuleExtractionResult(BaseModel):
 # ==================== HELPER FUNCTIONS ====================
 
 
-def _filter_relevant_sections(sections: list[ExtractedSection]) -> list[ExtractedSection]:
+def _filter_relevant_sections(
+    sections: list[ExtractedSection],
+) -> list[ExtractedSection]:
     """Filter sections most relevant for business rule extraction.
 
     Priority order:
@@ -191,8 +193,7 @@ def _filter_relevant_sections(sections: list[ExtractedSection]) -> list[Extracte
     # Fallback: return all sections except applications and inputs_outputs
     # (business rules are often scattered throughout)
     return [
-        s for s in sections
-        if s.section_type not in {"applications", "inputs_outputs"}
+        s for s in sections if s.section_type not in {"applications", "inputs_outputs"}
     ]
 
 
@@ -319,9 +320,15 @@ def extract_business_rules(
             max_tokens=1500,
             session_id=session_id or "rule_extractor",
         )
-        result = response if isinstance(response, BusinessRuleExtractionLLMResponse) else None
+        result = (
+            response
+            if isinstance(response, BusinessRuleExtractionLLMResponse)
+            else None
+        )
     except LLMProviderError as e:
-        logger.warning(f"Business rule extraction failed on first attempt, retrying: {e}")
+        logger.warning(
+            f"Business rule extraction failed on first attempt, retrying: {e}"
+        )
         pass
 
     # STEP 5: Retry on failure
@@ -338,7 +345,11 @@ def extract_business_rules(
                 max_tokens=1000,
                 session_id=(session_id or "rule_extractor") + "_retry",
             )
-            result = response if isinstance(response, BusinessRuleExtractionLLMResponse) else None
+            result = (
+                response
+                if isinstance(response, BusinessRuleExtractionLLMResponse)
+                else None
+            )
         except LLMProviderError as e:
             logger.error(f"Business rule extraction failed after retry: {e}")
             # Return empty result on both failures
@@ -378,7 +389,9 @@ def extract_business_rules(
     )
 
     for rule in validated_rules:
-        logger.debug(f"  - {rule.branch_name} ({rule.estimated_branch_activities} activities)")
+        logger.debug(
+            f"  - {rule.branch_name} ({rule.estimated_branch_activities} activities)"
+        )
 
     # STEP 9: Return result
     return BusinessRuleExtractionResult(

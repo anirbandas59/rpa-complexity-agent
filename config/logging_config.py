@@ -46,9 +46,7 @@ def setup_logging(log_level: str | None = None) -> None:
     except AttributeError:
         numeric_level = logging.INFO
         root_logger = logging.getLogger("rpa_agent")
-        root_logger.warning(
-            f"Unrecognized log level '{log_level}', defaulting to INFO"
-        )
+        root_logger.warning(f"Unrecognized log level '{log_level}', defaulting to INFO")
 
     # Get or create the "rpa_agent" logger
     rpa_logger = logging.getLogger("rpa_agent")
@@ -59,9 +57,7 @@ def setup_logging(log_level: str | None = None) -> None:
 
     # Log format
     formatter = logging.Formatter(
-        fmt=(
-            "%(asctime)s | %(levelname)-8s | %(name)-40s | %(message)s"
-        ),
+        fmt=("%(asctime)s | %(levelname)-8s | %(name)-40s | %(message)s"),
         datefmt="%Y-%m-%d %H:%M:%S",
     )
 

@@ -11,7 +11,6 @@ All LLM access via llm.manager.LLMManager abstraction.
 
 from __future__ import annotations
 
-import logging
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -45,8 +44,12 @@ class StepData(BaseModel):
     step_number: int = Field(..., description="Sequential step number (1-based)")
     description: str = Field(..., description="What the bot does in this step")
     weight: float = Field(default=1.0, description="Development effort weight")
-    reusability_tag: str = Field(default="NONE", description="Reusability classification")
-    reusability_comment: str = Field(default="", description="Explanation of reusability")
+    reusability_tag: str = Field(
+        default="NONE", description="Reusability classification"
+    )
+    reusability_comment: str = Field(
+        default="", description="Explanation of reusability"
+    )
 
     @field_validator("weight", mode="before")
     @classmethod
@@ -116,7 +119,9 @@ class BranchData(BaseModel):
 
     branch_name: str = Field(..., description="Name of this branch")
     description: str = Field(default="", description="What this branch does")
-    steps: list[StepData] = Field(default_factory=list, description="Steps in this branch")
+    steps: list[StepData] = Field(
+        default_factory=list, description="Steps in this branch"
+    )
 
     @property
     def branch_total_weight(self) -> float:
@@ -142,7 +147,9 @@ class StepDecompositionLLMResponse(BaseModel):
 
     model_config = ConfigDict(frozen=False)
 
-    branches: list[BranchData] = Field(default_factory=list, description="Process branches")
+    branches: list[BranchData] = Field(
+        default_factory=list, description="Process branches"
+    )
     total_weighted_steps: float = Field(
         default=0.0, description="Sum of all step weights"
     )
@@ -216,7 +223,9 @@ class StepDecompositionResult(BaseModel):
 # ===========================================================================
 
 
-def _prepare_sections_text(sections: list[ExtractedSection], max_chars: int = 3000) -> str:
+def _prepare_sections_text(
+    sections: list[ExtractedSection], max_chars: int = 3000
+) -> str:
     """Format sections for the LLM prompt.
 
     Args:

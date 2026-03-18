@@ -9,8 +9,6 @@ All LLM access via llm.manager.LLMManager abstraction.
 
 from __future__ import annotations
 
-import logging
-
 from pydantic import BaseModel, Field, field_validator
 
 from config.logging_config import get_logger
@@ -38,9 +36,7 @@ class ActivityAnalysisResult(BaseModel):
     raw_activity_count: int = Field(
         ..., description="Number of distinct activities identified"
     )
-    activity_list: list[str] = Field(
-        ..., description="List of activity descriptions"
-    )
+    activity_list: list[str] = Field(..., description="List of activity descriptions")
     count_confidence: float = Field(
         ..., description="Confidence score 0.0-1.0 of the count"
     )
@@ -113,7 +109,9 @@ class ActivityAnalysisResult(BaseModel):
 # ==================== HELPER FUNCTIONS ====================
 
 
-def _filter_relevant_sections(sections: list[ExtractedSection]) -> list[ExtractedSection]:
+def _filter_relevant_sections(
+    sections: list[ExtractedSection],
+) -> list[ExtractedSection]:
     """Filter sections most relevant for activity counting.
 
     Priority order:

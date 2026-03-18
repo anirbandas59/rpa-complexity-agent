@@ -17,17 +17,21 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from core.constants import AssessmentPhase, ComplexityTier, RPATool
-from core.exceptions import ScoringValidationError
-from core.models.assessment import AttributeScore
-from core.scoring.classifier import (
+from core.constants import AssessmentPhase, ComplexityTier, RPATool  # noqa: E402
+from core.exceptions import ScoringValidationError  # noqa: E402
+from core.models.assessment import AttributeScore  # noqa: E402
+from core.scoring.classifier import (  # noqa: E402
     classify,
     classify_with_validation,
     get_confidence_score,
     validate_inputs,
 )
-from core.scoring.effort_table import calculate_effort
-from core.scoring.weight_matrix import exceeds_xl_ceiling, get_weight, map_value_to_tier
+from core.scoring.effort_table import calculate_effort  # noqa: E402
+from core.scoring.weight_matrix import (  # noqa: E402
+    exceeds_xl_ceiling,
+    get_weight,
+    map_value_to_tier,
+)
 
 
 def print_header():
@@ -359,10 +363,10 @@ def validate_section_d():
     # D1: Complete end-to-end pipeline
     # Step 1: Use map_value_to_tier to derive tiers from raw values
     tier_1 = map_value_to_tier(1, 45)  # Activities=45
-    tier_2 = map_value_to_tier(2, 5)   # BusinessRules=5
-    tier_3 = map_value_to_tier(3, 5)   # Layouts=5
-    tier_4 = map_value_to_tier(4, 2)   # Interfaces=2
-    tier_5 = map_value_to_tier(5, 0)   # Technology=0
+    tier_2 = map_value_to_tier(2, 5)  # BusinessRules=5
+    tier_3 = map_value_to_tier(3, 5)  # Layouts=5
+    tier_4 = map_value_to_tier(4, 2)  # Interfaces=2
+    tier_5 = map_value_to_tier(5, 0)  # Technology=0
 
     # Step 2: Get weights for each tier
     weight_1 = get_weight(1, tier_1)
@@ -443,8 +447,10 @@ def validate_section_d():
         print(f"    Technology=0         → {tier_5.value:2} → weight {weight_5}")
         print(f"    Total Score:         {total_score}")
         print(f"    Final Tier:          {final_tier.value}")
-        print(f"    Effort:              {effort.total_min_days} days / {effort.sprint_display}")
-        print(f"    Result:              MATCHES EXCEL GROUND TRUTH ✓")
+        print(
+            f"    Effort:              {effort.total_min_days} days / {effort.sprint_display}"
+        )
+        print("    Result:              MATCHES EXCEL GROUND TRUTH ✓")
 
     results.append(d1_pass)
 

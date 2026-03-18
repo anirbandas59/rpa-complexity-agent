@@ -132,9 +132,7 @@ def run_assessment(
         "session_id": session_id,
         "status": final_state.get("status", "failed"),
         "complexity_tier": (
-            assessment_result.complexity_tier.value
-            if assessment_result
-            else None
+            assessment_result.complexity_tier.value if assessment_result else None
         ),
         "total_score": assessment_result.total_score if assessment_result else None,
         "confidence": (
@@ -142,9 +140,7 @@ def run_assessment(
         ),
         "reasoning": assessment_result.reasoning if assessment_result else None,
         "requires_tech_lead_review": (
-            assessment_result.requires_tech_lead_review
-            if assessment_result
-            else None
+            assessment_result.requires_tech_lead_review if assessment_result else None
         ),
         "raw_attributes": final_state.get("pa_state", {}).get("raw_attributes", {}),
         "detected_rpa_tool": final_state.get("pa_state", {}).get(

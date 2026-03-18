@@ -7,11 +7,15 @@ AttributeScore using the Phase 1 scoring engine (weight_matrix).
 Pure Python — no LLM calls.
 """
 
-from core.constants import ComplexityTier, RPATool
+from config.logging_config import get_logger
+from core.constants import ComplexityTier
 from core.exceptions import ScoringValidationError
 from core.models.assessment import AttributeScore
-from core.scoring.weight_matrix import get_weight, get_tier_range_description, map_value_to_tier
-from config.logging_config import get_logger
+from core.scoring.weight_matrix import (
+    get_tier_range_description,
+    get_weight,
+    map_value_to_tier,
+)
 
 logger = get_logger("attribute_scorer")
 

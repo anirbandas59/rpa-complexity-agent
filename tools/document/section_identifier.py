@@ -10,19 +10,16 @@ All LLM access via llm.manager.LLMManager abstraction.
 
 from __future__ import annotations
 
-import logging
 import re
-from typing import Any
 
 from pydantic import BaseModel, Field
 
 from config.logging_config import get_logger
-from core.exceptions import DocumentProcessingError, LLMProviderError
+from core.exceptions import LLMProviderError
 from core.models.document import ExtractedSection, ParsedDocument
 from llm.manager import LLMManager
 from tools.document.prompts import (
     SECTION_IDENTIFICATION_PROMPT,
-    SECTION_IDENTIFICATION_RETRY_PROMPT,
     SECTION_IDENTIFICATION_SYSTEM,
 )
 
@@ -165,8 +162,10 @@ def identify_sections_by_pattern(document: ParsedDocument) -> list[ExtractedSect
             heading_text = stripped[3:-3].strip()
             is_heading = True
         # Heading 2: --- text ---
-        elif stripped.startswith("---") and stripped.endswith("---") and not re.match(
-            r"^--- Page \d+ ---$", stripped
+        elif (
+            stripped.startswith("---")
+            and stripped.endswith("---")
+            and not re.match(r"^--- Page \d+ ---$", stripped)
         ):
             heading_text = stripped[3:-3].strip()
             is_heading = True
@@ -176,7 +175,12 @@ def identify_sections_by_pattern(document: ParsedDocument) -> list[ExtractedSect
             is_heading = True
 
         # Check for unstructured headings (short, capitalized lines)
-        if not is_heading and len(stripped) < 60 and stripped.isupper() and len(stripped) > 3:
+        if (
+            not is_heading
+            and len(stripped) < 60
+            and stripped.isupper()
+            and len(stripped) > 3
+        ):
             # Check if followed by content (next non-empty line is not a heading)
             if i + 1 < len(lines):
                 next_non_empty = None
@@ -212,7 +216,11 @@ def identify_sections_by_pattern(document: ParsedDocument) -> list[ExtractedSect
                     next_line.startswith("===")
                     or next_line.startswith("---")
                     or next_line.startswith(">")
-                    or (len(next_line) < 60 and next_line.isupper() and len(next_line) > 3)
+                    or (
+                        len(next_line) < 60
+                        and next_line.isupper()
+                        and len(next_line) > 3
+                    )
                 ):
                     break
                 content_lines.append(lines[j])
@@ -288,7 +296,7 @@ def identify_sections_by_llm(
     """
     # Truncate to manage token limits
     max_chars = 8000
-    text_for_llm = document.full_text[: max_chars]
+    text_for_llm = document.full_text[:max_chars]
 
     if len(document.full_text) > max_chars:
         logger.debug(
@@ -314,7 +322,9 @@ def identify_sections_by_llm(
             # Validate and normalize section_type
             section_type = section_resp.section_type
             if section_type not in VALID_SECTION_TYPES:
-                logger.debug(f"Invalid section_type '{section_type}' remapped to 'general'")
+                logger.debug(
+                    f"Invalid section_type '{section_type}' remapped to 'general'"
+                )
                 section_type = "general"
 
             # Clamp confidence score
@@ -365,7 +375,9 @@ def identify_sections(
 
     # STEP 2: Check if we need LLM fallback
     if len(pattern_sections) >= 3:
-        logger.info(f"Pattern matching found {len(pattern_sections)} sections — skipping LLM")
+        logger.info(
+            f"Pattern matching found {len(pattern_sections)} sections — skipping LLM"
+        )
         return pattern_sections
 
     # STEP 3: LLM fallback

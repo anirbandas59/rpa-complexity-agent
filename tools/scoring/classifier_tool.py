@@ -13,14 +13,13 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from pathlib import Path
 
 from pydantic import BaseModel, Field, field_validator
 
 from config.logging_config import get_logger
 from core.constants import ComplexityTier, RPATool
-from core.exceptions import LLMProviderError, ScoringValidationError
-from core.models.assessment import AttributeScore, AssessmentResult
+from core.exceptions import LLMProviderError
+from core.models.assessment import AssessmentResult, AttributeScore
 from core.scoring.classifier import classify_with_validation, get_confidence_score
 from llm.manager import LLMManager
 from tools.scoring.prompts import (

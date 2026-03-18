@@ -1,8 +1,9 @@
 """Tests for layout_identifier tool."""
 
-import pytest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 from core.exceptions import LLMProviderError
 from core.models.document import ExtractedSection
@@ -13,12 +14,10 @@ from tools.analysis.layout_identifier import (
     _deduplicate_layouts,
     _filter_relevant_sections,
     _normalize_layout_name,
-    _prepare_sections_text,
     get_layout_count,
     get_layout_tier_hint,
     identify_layouts,
 )
-
 
 # ==================== _normalize_layout_name TESTS ====================
 
@@ -183,7 +182,7 @@ class TestDeduplicateLayouts:
         result = _deduplicate_layouts(layouts)
         assert len(result) == 2
         # First two deduplicate to one with confidence 0.7
-        deduplicated_names = [_normalize_layout_name(l.name) for l in result]
+        deduplicated_names = [_normalize_layout_name(layout.name) for layout in result]
         assert _normalize_layout_name("Template") in deduplicated_names
         assert _normalize_layout_name("Report") in deduplicated_names
 
@@ -709,9 +708,7 @@ class TestGetLayoutTierHint:
     def test_five_layouts(self):
         """5 layouts → hints at L."""
         result = LayoutIdentificationResult(
-            layouts=[
-                IdentifiedLayout(name=f"Template {i}") for i in range(5)
-            ],
+            layouts=[IdentifiedLayout(name=f"Template {i}") for i in range(5)],
             total_count=5,
             detection_confidence=0.8,
             exceeds_ceiling=False,
@@ -722,9 +719,7 @@ class TestGetLayoutTierHint:
     def test_eight_layouts(self):
         """8 layouts → hints at XL."""
         result = LayoutIdentificationResult(
-            layouts=[
-                IdentifiedLayout(name=f"Template {i}") for i in range(8)
-            ],
+            layouts=[IdentifiedLayout(name=f"Template {i}") for i in range(8)],
             total_count=8,
             detection_confidence=0.8,
             exceeds_ceiling=False,
@@ -735,9 +730,7 @@ class TestGetLayoutTierHint:
     def test_exceeds_ceiling(self):
         """> 10 layouts → hints at exceeds ceiling."""
         result = LayoutIdentificationResult(
-            layouts=[
-                IdentifiedLayout(name=f"Template {i}") for i in range(11)
-            ],
+            layouts=[IdentifiedLayout(name=f"Template {i}") for i in range(11)],
             total_count=11,
             detection_confidence=0.5,
             exceeds_ceiling=True,
@@ -820,7 +813,12 @@ class TestGroundTruth:
 @pytest.fixture
 def sample_process_docx() -> Path:
     """Path to sample_process.docx test fixture."""
-    path = Path(__file__).parent.parent.parent / "data" / "sample_pdds" / "sample_process.docx"
+    path = (
+        Path(__file__).parent.parent.parent
+        / "data"
+        / "sample_pdds"
+        / "sample_process.docx"
+    )
     if not path.exists():
         pytest.skip(f"Sample document not found at {path}")
     return path

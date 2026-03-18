@@ -5,15 +5,15 @@ table extraction, metadata extraction, and ParsedDocument model compliance.
 Also verifies schema consistency with parse_pdf.
 """
 
-from pathlib import Path
 import tempfile
+from pathlib import Path
+
 import pytest
 
+from core.exceptions import DocumentProcessingError
+from core.models.document import ParsedDocument
 from tools.document.docx_parser import parse_docx
 from tools.document.pdf_parser import parse_pdf
-from core.models.document import ParsedDocument
-from core.exceptions import DocumentProcessingError
-
 
 # ==================== FIXTURES ====================
 
@@ -21,7 +21,12 @@ from core.exceptions import DocumentProcessingError
 @pytest.fixture
 def sample_process_docx() -> Path:
     """Path to sample_process.docx test fixture."""
-    path = Path(__file__).parent.parent.parent / "data" / "sample_pdds" / "sample_process.docx"
+    path = (
+        Path(__file__).parent.parent.parent
+        / "data"
+        / "sample_pdds"
+        / "sample_process.docx"
+    )
     assert path.exists(), f"Test fixture not found: {path}"
     return path
 
@@ -163,7 +168,9 @@ def test_parse_docx_tables_is_list(sample_process_docx: Path):
 def test_parse_docx_tables_non_empty(sample_process_docx: Path):
     """Test that tables is non-empty for sample_process.docx."""
     result = parse_docx(str(sample_process_docx))
-    assert len(result.tables) > 0, "sample_process.docx should contain at least one table"
+    assert (
+        len(result.tables) > 0
+    ), "sample_process.docx should contain at least one table"
 
 
 def test_parse_docx_first_table_has_data_rows(sample_process_docx: Path):
@@ -216,7 +223,9 @@ def test_parse_docx_metadata_contains_file_size(sample_process_docx: Path):
     assert "file_size_bytes" in result.metadata
 
 
-def test_parse_docx_metadata_contains_page_count_estimated_flag(sample_process_docx: Path):
+def test_parse_docx_metadata_contains_page_count_estimated_flag(
+    sample_process_docx: Path,
+):
     """Test that metadata contains page_count_estimated flag."""
     result = parse_docx(str(sample_process_docx))
     assert "page_count_estimated" in result.metadata
@@ -310,7 +319,9 @@ def test_parse_docx_metadata_all_strings(sample_process_docx: Path):
     result = parse_docx(str(sample_process_docx))
 
     for key, value in result.metadata.items():
-        assert isinstance(value, str), f"Metadata[{key}] should be string, got {type(value)}"
+        assert isinstance(
+            value, str
+        ), f"Metadata[{key}] should be string, got {type(value)}"
 
 
 # ==================== INTEGRATION TESTS ====================

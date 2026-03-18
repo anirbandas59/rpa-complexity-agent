@@ -10,7 +10,7 @@ uses real files and executes the full pipeline.
 import json
 from datetime import date, datetime
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -28,9 +28,6 @@ from agents.orchestrator import (
 from core.constants import ComplexityTier, RPATool
 from core.exceptions import AgentExecutionError, OutputGenerationError
 from core.models.assessment import AssessmentResult, AttributeScore
-from core.models.document import ExtractedSection, ParsedDocument
-from core.models.timeline import DeliveryTimeline
-
 
 # ==================== FIXTURES ====================
 
@@ -447,10 +444,13 @@ def test_stage_effort_and_decomposition_parses_start_date(
     mock_timeline.total_sp.return_value = 5.3
     mock_timeline.features = []
 
-    with patch(
-        "agents.orchestrator.decompose_steps", return_value=mock_decomp
-    ), patch("agents.orchestrator.build_timeline", return_value=mock_timeline) as mock_build:
-        result = stage_effort_and_decomposition(base_pipeline_state)
+    with (
+        patch("agents.orchestrator.decompose_steps", return_value=mock_decomp),
+        patch(
+            "agents.orchestrator.build_timeline", return_value=mock_timeline
+        ) as mock_build,
+    ):
+        stage_effort_and_decomposition(base_pipeline_state)
 
     # Check that build_timeline was called with the correct date object
     call_args = mock_build.call_args
@@ -476,10 +476,13 @@ def test_stage_effort_and_decomposition_invalid_start_date_uses_today(
     mock_timeline.total_sp.return_value = 5.3
     mock_timeline.features = []
 
-    with patch(
-        "agents.orchestrator.decompose_steps", return_value=mock_decomp
-    ), patch("agents.orchestrator.build_timeline", return_value=mock_timeline) as mock_build:
-        result = stage_effort_and_decomposition(base_pipeline_state)
+    with (
+        patch("agents.orchestrator.decompose_steps", return_value=mock_decomp),
+        patch(
+            "agents.orchestrator.build_timeline", return_value=mock_timeline
+        ) as mock_build,
+    ):
+        stage_effort_and_decomposition(base_pipeline_state)
 
     # Check that build_timeline was called with today's date
     call_args = mock_build.call_args
@@ -520,12 +523,15 @@ def test_stage_generate_outputs_both_succeed(
     base_pipeline_state["_decomposition_obj"] = mock_decomp
     base_pipeline_state["_timeline_obj"] = mock_timeline
 
-    with patch(
-        "agents.orchestrator.generate_excel_report",
-        return_value="/output/test.xlsx",
-    ), patch(
-        "agents.orchestrator.generate_pdf_report",
-        return_value="/output/test.pdf",
+    with (
+        patch(
+            "agents.orchestrator.generate_excel_report",
+            return_value="/output/test.xlsx",
+        ),
+        patch(
+            "agents.orchestrator.generate_pdf_report",
+            return_value="/output/test.pdf",
+        ),
     ):
         result = stage_generate_outputs(base_pipeline_state)
 
@@ -546,12 +552,15 @@ def test_stage_generate_outputs_excel_fails(
     base_pipeline_state["_decomposition_obj"] = mock_decomp
     base_pipeline_state["_timeline_obj"] = mock_timeline
 
-    with patch(
-        "agents.orchestrator.generate_excel_report",
-        side_effect=OutputGenerationError(message="Excel failed", context={}),
-    ), patch(
-        "agents.orchestrator.generate_pdf_report",
-        return_value="/output/test.pdf",
+    with (
+        patch(
+            "agents.orchestrator.generate_excel_report",
+            side_effect=OutputGenerationError(message="Excel failed", context={}),
+        ),
+        patch(
+            "agents.orchestrator.generate_pdf_report",
+            return_value="/output/test.pdf",
+        ),
     ):
         result = stage_generate_outputs(base_pipeline_state)
 
@@ -573,12 +582,15 @@ def test_stage_generate_outputs_both_fail(
     base_pipeline_state["_decomposition_obj"] = mock_decomp
     base_pipeline_state["_timeline_obj"] = mock_timeline
 
-    with patch(
-        "agents.orchestrator.generate_excel_report",
-        side_effect=OutputGenerationError(message="Excel failed", context={}),
-    ), patch(
-        "agents.orchestrator.generate_pdf_report",
-        side_effect=OutputGenerationError(message="PDF failed", context={}),
+    with (
+        patch(
+            "agents.orchestrator.generate_excel_report",
+            side_effect=OutputGenerationError(message="Excel failed", context={}),
+        ),
+        patch(
+            "agents.orchestrator.generate_pdf_report",
+            side_effect=OutputGenerationError(message="PDF failed", context={}),
+        ),
     ):
         result = stage_generate_outputs(base_pipeline_state)
 
@@ -619,10 +631,10 @@ def test_run_assessment_missing_file() -> None:
 
 def test_run_assessment_unsupported_extension() -> None:
     """Test run_assessment raises on unsupported file type."""
-    from agents import run_assessment
-
     # Create a temporary .txt file
     import tempfile
+
+    from agents import run_assessment
 
     with tempfile.NamedTemporaryFile(suffix=".txt", delete=False) as f:
         temp_file = f.name
@@ -767,7 +779,7 @@ def test_run_assessment_with_parameters(
             "completed_at": "",
         }
 
-        result = run_assessment(
+        run_assessment(
             file_path=str(sample_process_docx),
             rpa_tool="blue_prism",
             project_name="My Project",
@@ -816,12 +828,15 @@ def test_full_pipeline_integration(sample_process_docx: Path) -> None:
 
     # Debug: print any errors that occurred
     if result["errors"]:
-        print(f"\n=== PIPELINE ERRORS ===")
+        print("\n=== PIPELINE ERRORS ===")
         for err in result["errors"]:
             print(f"  - {err}")
 
     # Status checks
-    assert result["status"] in ["success", "partial"], f"Pipeline failed with errors: {result['errors']}"
+    assert result["status"] in [
+        "success",
+        "partial",
+    ], f"Pipeline failed with errors: {result['errors']}"
     assert result["session_id"] == "integration_test"
 
     # Assessment checks
@@ -850,7 +865,11 @@ def test_full_pipeline_integration(sample_process_docx: Path) -> None:
     print(f"Status:     {result['status']}")
     print(f"Tier:       {result['complexity_tier']}")
     print(f"Score:      {result['total_score']}/28")
-    print(f"Confidence: {result['confidence']:.2f}" if result['confidence'] else "Confidence: None")
+    print(
+        f"Confidence: {result['confidence']:.2f}"
+        if result["confidence"]
+        else "Confidence: None"
+    )
     print(f"RPA Tool:   {result['detected_rpa_tool']}")
     print(f"Attributes: {result['raw_attributes']}")
     print(f"Excel:      {result['output_files']['excel']}")

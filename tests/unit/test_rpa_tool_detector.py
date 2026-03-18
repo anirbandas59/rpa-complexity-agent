@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-import pytest
-
 from core.constants import RPATool
 from core.models.document import ParsedDocument
 from tools.analysis.rpa_tool_detector import (
@@ -14,7 +12,6 @@ from tools.analysis.rpa_tool_detector import (
     detect_rpa_tool,
     get_rpa_tool,
 )
-
 
 # ==================== TEST: _scan_text_for_tool ====================
 

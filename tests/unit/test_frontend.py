@@ -5,9 +5,9 @@ Tests API client functions and components (helper functions).
 Page rendering is validated via manual smoke tests.
 """
 
-from unittest.mock import patch, MagicMock
-import pytest
+from unittest.mock import MagicMock, patch
 
+import pytest
 
 # ─── API Client Function Tests ─────────────────────────────────
 
@@ -273,10 +273,14 @@ def test_api_base_url_from_env():
     with patch.dict(os.environ, {"API_BASE_URL": "http://example.com:9000"}):
         # Reimport to get new env value
         import importlib
+
         import frontend.app as app_module
 
         importlib.reload(app_module)
-        assert "example.com" in app_module.API_BASE_URL or "http://localhost" in app_module.API_BASE_URL
+        assert (
+            "example.com" in app_module.API_BASE_URL
+            or "http://localhost" in app_module.API_BASE_URL
+        )
 
 
 def test_api_post_assess_includes_all_form_fields():

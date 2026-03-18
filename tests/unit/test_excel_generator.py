@@ -16,10 +16,10 @@ from core.constants import ComplexityTier, RPATool
 from core.exceptions import OutputGenerationError
 from core.models.assessment import AssessmentResult, AttributeScore
 from tools.output.excel_generator import (
-    generate_excel_report,
     _write_calculator_sheet,
     _write_steps_sheet,
     _write_timeline_sheet,
+    generate_excel_report,
 )
 from tools.output.step_decomposer import (
     BranchData,
@@ -211,9 +211,13 @@ class TestCalculatorSheet:
         _write_calculator_sheet(ws, sample_assessment_result)
         # Activities (attr 1) selected tier is XL, marker is in Q column (row 10)
         # Check that one of the marker columns has the X
-        assert (ws["E10"].value == "X" or ws["H10"].value == "X" or
-                ws["K10"].value == "X" or ws["N10"].value == "X" or
-                ws["Q10"].value == "X")
+        assert (
+            ws["E10"].value == "X"
+            or ws["H10"].value == "X"
+            or ws["K10"].value == "X"
+            or ws["N10"].value == "X"
+            or ws["Q10"].value == "X"
+        )
 
     def test_score_section_written(self, sample_assessment_result):
         """Test score section headers."""
@@ -369,7 +373,9 @@ class TestTimelineSheet:
         _write_timeline_sheet(ws, sample_timeline, sample_assessment_result)
         assert ws["C3"].value == "GMP ASM Automation"
 
-    def test_timeline_sheet_squad_label(self, sample_assessment_result, sample_timeline):
+    def test_timeline_sheet_squad_label(
+        self, sample_assessment_result, sample_timeline
+    ):
         """Test squad header label."""
         from openpyxl import Workbook
 
@@ -440,7 +446,9 @@ class TestTimelineSheet:
 class TestGenerateExcelReport:
     """Test generate_excel_report main function."""
 
-    def test_returns_string_path(self, sample_assessment_result, sample_decomposition, sample_timeline):
+    def test_returns_string_path(
+        self, sample_assessment_result, sample_decomposition, sample_timeline
+    ):
         """Test function returns a string path."""
         path = generate_excel_report(
             assessment_result=sample_assessment_result,
@@ -536,7 +544,7 @@ class TestGenerateExcelReport:
 
                 # Call without output_path to test auto-generation
                 try:
-                    path = generate_excel_report(
+                    generate_excel_report(
                         assessment_result=sample_assessment_result,
                         decomposition=sample_decomposition,
                         timeline=sample_timeline,

@@ -14,7 +14,6 @@ from agents.process_analysis.agent import (
 from core.constants import RPATool
 from core.models.document import ExtractedSection, ParsedDocument
 
-
 # ==================== TEST: compile_attributes NODE ====================
 
 
@@ -603,16 +602,22 @@ def test_process_analysis_agent_integration():
     }
 
     # Mock the internal analysis tools to return results
-    with patch("agents.process_analysis.agent.analyze_activities") as mock_activity, \
-         patch("agents.process_analysis.agent.detect_interfaces") as mock_interface, \
-         patch("agents.process_analysis.agent.extract_business_rules") as mock_rules, \
-         patch("agents.process_analysis.agent.identify_layouts") as mock_layouts, \
-         patch("agents.process_analysis.agent.detect_technology") as mock_tech:
+    with (
+        patch("agents.process_analysis.agent.analyze_activities") as mock_activity,
+        patch("agents.process_analysis.agent.detect_interfaces") as mock_interface,
+        patch("agents.process_analysis.agent.extract_business_rules") as mock_rules,
+        patch("agents.process_analysis.agent.identify_layouts") as mock_layouts,
+        patch("agents.process_analysis.agent.detect_technology") as mock_tech,
+    ):
 
         # Mock return values
-        mock_activity.return_value = MagicMock(raw_activity_count=8, count_confidence=0.9)
+        mock_activity.return_value = MagicMock(
+            raw_activity_count=8, count_confidence=0.9
+        )
         mock_interface.return_value = MagicMock(total_count=2, detection_confidence=0.8)
-        mock_rules.return_value = MagicMock(total_qualifying_count=2, extraction_confidence=0.8)
+        mock_rules.return_value = MagicMock(
+            total_qualifying_count=2, extraction_confidence=0.8
+        )
         mock_layouts.return_value = MagicMock(total_count=3, detection_confidence=0.85)
         mock_tech.return_value = MagicMock(total_count=0, detection_confidence=0.9)
 
@@ -626,7 +631,10 @@ def test_process_analysis_agent_integration():
         assert result["raw_attributes"]["layouts"] == 3
         assert result["raw_attributes"]["interfaces"] == 2
         assert result["raw_attributes"]["technology"] == 0
-        assert result["detected_rpa_tool"] in [RPATool.BLUE_PRISM.value, RPATool.UNKNOWN.value]
+        assert result["detected_rpa_tool"] in [
+            RPATool.BLUE_PRISM.value,
+            RPATool.UNKNOWN.value,
+        ]
         assert result["completed_at"] != ""
 
         # Print for visibility

@@ -4,14 +4,14 @@ Tests cover file validation, text extraction, table extraction,
 metadata extraction, and ParsedDocument model compliance.
 """
 
-from pathlib import Path
-import pytest
 import tempfile
+from pathlib import Path
 
-from tools.document.pdf_parser import parse_pdf
-from core.models.document import ParsedDocument
+import pytest
+
 from core.exceptions import DocumentProcessingError
-
+from core.models.document import ParsedDocument
+from tools.document.pdf_parser import parse_pdf
 
 # ==================== FIXTURES ====================
 
@@ -19,7 +19,12 @@ from core.exceptions import DocumentProcessingError
 @pytest.fixture
 def sample_simple_pdf() -> Path:
     """Path to sample_simple.pdf test fixture."""
-    path = Path(__file__).parent.parent.parent / "data" / "sample_pdds" / "sample_simple.pdf"
+    path = (
+        Path(__file__).parent.parent.parent
+        / "data"
+        / "sample_pdds"
+        / "sample_simple.pdf"
+    )
     assert path.exists(), f"Test fixture not found: {path}"
     return path
 
@@ -27,7 +32,12 @@ def sample_simple_pdf() -> Path:
 @pytest.fixture
 def sample_table_pdf() -> Path:
     """Path to sample_table.pdf test fixture."""
-    path = Path(__file__).parent.parent.parent / "data" / "sample_pdds" / "sample_table.pdf"
+    path = (
+        Path(__file__).parent.parent.parent
+        / "data"
+        / "sample_pdds"
+        / "sample_table.pdf"
+    )
     assert path.exists(), f"Test fixture not found: {path}"
     return path
 
@@ -206,7 +216,9 @@ def test_parse_pdf_table_structure(sample_table_pdf: Path):
             # Check that headers are consistent
             first_row_keys = set(table[0].keys())
             for row in table[1:]:
-                assert set(row.keys()) == first_row_keys, "All rows should have same keys"
+                assert (
+                    set(row.keys()) == first_row_keys
+                ), "All rows should have same keys"
 
 
 # ==================== PARSED DOCUMENT MODEL TESTS ====================

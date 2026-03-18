@@ -6,6 +6,7 @@ Communicates with FastAPI backend via HTTP.
 """
 
 import os
+
 import httpx
 import streamlit as st
 
@@ -135,8 +136,7 @@ def render_sidebar():
     st.sidebar.divider()
 
     # Info box
-    st.sidebar.info(
-        """
+    st.sidebar.info("""
         **Supported Formats:**
         - PDF (.pdf)
         - Word (.docx)
@@ -149,8 +149,7 @@ def render_sidebar():
         - UiPath
         - Power Automate
         - Automation Anywhere 360
-        """
-    )
+        """)
 
     # New assessment button
     if st.sidebar.button("🔄 New Assessment", use_container_width=True):

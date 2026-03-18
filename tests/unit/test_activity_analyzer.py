@@ -7,7 +7,7 @@ Integration test marked separately and uses real DOCX fixture.
 """
 
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -22,14 +22,18 @@ from tools.analysis.activity_analyzer import (
 from tools.document.docx_parser import parse_docx
 from tools.document.section_identifier import identify_sections
 
-
 # ==================== FIXTURES ====================
 
 
 @pytest.fixture
 def sample_process_docx() -> Path:
     """Path to sample_process.docx test fixture."""
-    path = Path(__file__).parent.parent.parent / "data" / "sample_pdds" / "sample_process.docx"
+    path = (
+        Path(__file__).parent.parent.parent
+        / "data"
+        / "sample_pdds"
+        / "sample_process.docx"
+    )
     assert path.exists()
     return path
 
@@ -315,7 +319,13 @@ def test_activity_analysis_result_clamps_confidence():
     # Over 1.0
     result = ActivityAnalysisResult(
         raw_activity_count=5,
-        activity_list=["Activity 1", "Activity 2", "Activity 3", "Activity 4", "Activity 5"],
+        activity_list=[
+            "Activity 1",
+            "Activity 2",
+            "Activity 3",
+            "Activity 4",
+            "Activity 5",
+        ],
         count_confidence=1.5,
         counting_rationale="Test",
     )
@@ -324,7 +334,13 @@ def test_activity_analysis_result_clamps_confidence():
     # Below 0.0
     result = ActivityAnalysisResult(
         raw_activity_count=5,
-        activity_list=["Activity 1", "Activity 2", "Activity 3", "Activity 4", "Activity 5"],
+        activity_list=[
+            "Activity 1",
+            "Activity 2",
+            "Activity 3",
+            "Activity 4",
+            "Activity 5",
+        ],
         count_confidence=-0.5,
         counting_rationale="Test",
     )

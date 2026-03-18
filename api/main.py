@@ -10,9 +10,9 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from config.logging_config import setup_logging, get_logger
-from api.routes import assessment, health
 from api.middleware.error_handler import register_exception_handlers
+from api.routes import assessment, health
+from config.logging_config import get_logger, setup_logging
 
 logger = get_logger("api.startup")
 

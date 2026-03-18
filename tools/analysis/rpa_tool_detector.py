@@ -9,7 +9,6 @@ All RPA platform reference patterns defined locally.
 
 from __future__ import annotations
 
-import logging
 import re
 
 from pydantic import BaseModel, Field, field_validator
@@ -78,9 +77,7 @@ class RPAToolDetectionResult(BaseModel):
     confidence: float = Field(
         default=0.0, description="Confidence 0.0-1.0 in the detection"
     )
-    mention_count: int = Field(
-        default=0, description="Number of mentions of the tool"
-    )
+    mention_count: int = Field(default=0, description="Number of mentions of the tool")
     evidence: list[str] = Field(
         default_factory=list, description="Text snippets confirming detection"
     )

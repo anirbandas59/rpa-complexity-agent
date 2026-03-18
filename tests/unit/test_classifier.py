@@ -5,8 +5,6 @@ Comprehensive tests for validation, classification, special cases,
 and confidence scoring.
 """
 
-from datetime import datetime, timezone
-
 import pytest
 
 from core.constants import ComplexityTier
@@ -404,7 +402,7 @@ class TestGetConfidenceScore:
         confidence = get_confidence_score(19, ComplexityTier.L)
         # Check if it has at most 2 decimal places
         assert isinstance(confidence, float)
-        assert len(str(confidence).split('.')[-1]) <= 2
+        assert len(str(confidence).split(".")[-1]) <= 2
 
 
 class TestClassifyWithValidation:

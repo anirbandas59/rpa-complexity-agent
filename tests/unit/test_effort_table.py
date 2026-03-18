@@ -5,12 +5,8 @@ Comprehensive tests for effort loading, RPA adjustments,
 and complete effort calculations.
 """
 
-import pytest
-
 from core.constants import AssessmentPhase, ComplexityTier, RPATool
-from core.exceptions import ScoringValidationError
 from core.scoring.effort_table import (
-    EffortEstimate,
     PhaseEffort,
     apply_rpa_adjustment,
     calculate_effort,
@@ -61,7 +57,12 @@ class TestGetBaseEffort:
 
     def test_get_base_effort_non_range_tiers(self):
         """Verify non-S tiers have fixed values (is_range=False)."""
-        for tier in [ComplexityTier.XS, ComplexityTier.M, ComplexityTier.L, ComplexityTier.XL]:
+        for tier in [
+            ComplexityTier.XS,
+            ComplexityTier.M,
+            ComplexityTier.L,
+            ComplexityTier.XL,
+        ]:
             effort = get_base_effort(tier)
             for phase_effort in effort.values():
                 assert phase_effort.is_range is False
@@ -79,15 +80,17 @@ class TestGetRpaAdjustmentFactor:
 
     def test_blue_prism_surface_automation(self):
         """Verify Blue Prism surface automation factor."""
-        assert get_rpa_adjustment_factor(
-            RPATool.BLUE_PRISM, has_surface_automation=True
-        ) == 1.3
+        assert (
+            get_rpa_adjustment_factor(RPATool.BLUE_PRISM, has_surface_automation=True)
+            == 1.3
+        )
 
     def test_blue_prism_api_integration(self):
         """Verify Blue Prism API integration factor."""
-        assert get_rpa_adjustment_factor(
-            RPATool.BLUE_PRISM, has_api_integration=True
-        ) == 1.1
+        assert (
+            get_rpa_adjustment_factor(RPATool.BLUE_PRISM, has_api_integration=True)
+            == 1.1
+        )
 
     def test_blue_prism_default(self):
         """Verify Blue Prism default factor."""
@@ -95,46 +98,54 @@ class TestGetRpaAdjustmentFactor:
 
     def test_uipath_surface_automation(self):
         """Verify UiPath surface automation factor."""
-        assert get_rpa_adjustment_factor(
-            RPATool.UIPATH, has_surface_automation=True
-        ) == 1.1
+        assert (
+            get_rpa_adjustment_factor(RPATool.UIPATH, has_surface_automation=True)
+            == 1.1
+        )
 
     def test_uipath_api_integration(self):
         """Verify UiPath API integration factor."""
-        assert get_rpa_adjustment_factor(
-            RPATool.UIPATH, has_api_integration=True
-        ) == 1.0
+        assert (
+            get_rpa_adjustment_factor(RPATool.UIPATH, has_api_integration=True) == 1.0
+        )
 
     def test_power_automate_surface_automation(self):
         """Verify Power Automate surface automation factor."""
-        assert get_rpa_adjustment_factor(
-            RPATool.POWER_AUTOMATE, has_surface_automation=True
-        ) == 1.4
+        assert (
+            get_rpa_adjustment_factor(
+                RPATool.POWER_AUTOMATE, has_surface_automation=True
+            )
+            == 1.4
+        )
 
     def test_power_automate_api_integration(self):
         """Verify Power Automate API integration factor."""
-        assert get_rpa_adjustment_factor(
-            RPATool.POWER_AUTOMATE, has_api_integration=True
-        ) == 0.9
+        assert (
+            get_rpa_adjustment_factor(RPATool.POWER_AUTOMATE, has_api_integration=True)
+            == 0.9
+        )
 
     def test_aa360_surface_automation(self):
         """Verify AA360 surface automation factor."""
-        assert get_rpa_adjustment_factor(
-            RPATool.AA360, has_surface_automation=True
-        ) == 1.2
+        assert (
+            get_rpa_adjustment_factor(RPATool.AA360, has_surface_automation=True) == 1.2
+        )
 
     def test_aa360_api_integration(self):
         """Verify AA360 API integration factor."""
-        assert get_rpa_adjustment_factor(
-            RPATool.AA360, has_api_integration=True
-        ) == 1.1
+        assert get_rpa_adjustment_factor(RPATool.AA360, has_api_integration=True) == 1.1
 
     def test_surface_takes_precedence_over_api(self):
         """Verify surface automation is used when both flags are True."""
         # Blue Prism: surface=1.3, api=1.1
-        assert get_rpa_adjustment_factor(
-            RPATool.BLUE_PRISM, has_surface_automation=True, has_api_integration=True
-        ) == 1.3
+        assert (
+            get_rpa_adjustment_factor(
+                RPATool.BLUE_PRISM,
+                has_surface_automation=True,
+                has_api_integration=True,
+            )
+            == 1.3
+        )
 
 
 class TestApplyRpaAdjustment:

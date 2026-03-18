@@ -4,17 +4,14 @@ Tests for LLMManager and settings configuration.
 Uses unittest.mock to patch all dependencies — zero real API calls.
 """
 
-import time
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
-from pydantic import BaseModel, ValidationError
 
-from config.settings import Settings, get_settings
+from config.settings import get_settings
 from core.exceptions import LLMProviderError
 from llm.manager import LLMManager, get_default_manager
 from llm.providers import LLMResponse
-
 
 # ═════════════════════════════════════════════════════════════════
 # Settings Tests
@@ -184,7 +181,7 @@ class TestLLMManagerConstruction:
         mock_settings_obj.ollama_base_url = "http://localhost:11434"
         mock_settings.return_value = mock_settings_obj
 
-        manager = LLMManager(
+        LLMManager(
             provider_name="ollama",
             model_name="llama3",
         )
@@ -412,9 +409,7 @@ class TestLLMManagerComplete:
         mock_settings.return_value = mock_settings_obj
 
         mock_provider = Mock()
-        mock_provider.complete.side_effect = LLMProviderError(
-            "authentication failed"
-        )
+        mock_provider.complete.side_effect = LLMProviderError("authentication failed")
         mock_provider_class.return_value = mock_provider
 
         manager = LLMManager()
@@ -442,9 +437,7 @@ class TestLLMManagerComplete:
         mock_settings.return_value = mock_settings_obj
 
         mock_provider = Mock()
-        mock_provider.complete.side_effect = LLMProviderError(
-            "rate limit exceeded"
-        )
+        mock_provider.complete.side_effect = LLMProviderError("rate limit exceeded")
         mock_provider_class.return_value = mock_provider
 
         manager = LLMManager()
@@ -701,6 +694,7 @@ class TestGetDefaultManager:
 
         # Reset the global singleton
         import llm.manager as mgr_module
+
         mgr_module._default_manager = None
 
         manager1 = get_default_manager()

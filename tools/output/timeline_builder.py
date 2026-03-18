@@ -10,13 +10,12 @@ No LLM involvement — fully deterministic.
 
 from __future__ import annotations
 
-import logging
 from datetime import date, timedelta
 
 from config.logging_config import get_logger
 from core.models.assessment import AssessmentResult
 from core.models.timeline import DeliveryFeature, DeliveryTimeline
-from tools.output.step_decomposer import StepDecompositionResult, BranchData
+from tools.output.step_decomposer import BranchData, StepDecompositionResult
 
 logger = get_logger("timeline_builder")
 
@@ -28,10 +27,10 @@ SP_CONVERSION_RATE = 0.0666  # 1 hour = 0.0666 SP
 HOURS_PER_WORKING_DAY = 9  # 9-hour working days
 
 STEP_WEIGHT_TO_HOURS: dict[float, float] = {
-    0.0: 0,      # Reused — no hours
-    0.5: 4.5,    # Half day
-    1.0: 9.0,    # One full day
-    2.0: 18.0,   # Two full days
+    0.0: 0,  # Reused — no hours
+    0.5: 4.5,  # Half day
+    1.0: 9.0,  # One full day
+    2.0: 18.0,  # Two full days
 }
 
 # ===========================================================================
@@ -124,8 +123,6 @@ def build_timeline(
         if hours == 0:
             hours = 9.0  # Minimum 1 day per feature
 
-        sp = round(SP_CONVERSION_RATE * hours, 2)
-
         # Calculate working days needed
         working_days_needed = max(1, round(hours / HOURS_PER_WORKING_DAY))
 
@@ -206,7 +203,6 @@ def get_timeline_summary(timeline: DeliveryTimeline) -> str:
     lines.extend(["─" * 50, "Features:"])
 
     for feature in timeline.features:
-        duration = (feature.end_date - feature.start_date).days
         lines.append(
             f"  {feature.name}: {feature.hours:.0f}h / {feature.sp}SP "
             f"({feature.start_date} → {feature.end_date})"

@@ -1,7 +1,8 @@
 """Upload page — PDD file upload form."""
 
-import streamlit as st
 from datetime import date
+
+import streamlit as st
 
 
 def show() -> None:
@@ -95,8 +96,7 @@ def show() -> None:
     # RIGHT COLUMN — Information panel
     with col_right:
         st.subheader("ℹ️ About This Tool")
-        st.info(
-            """
+        st.info("""
             This tool automates RPA complexity assessment by:
 
             1. **Parsing** your PDD document
@@ -110,12 +110,10 @@ def show() -> None:
             - ⬜ M — Medium (50 days)
             - 🔴 L — Large (60 days)
             - 🟣 XL — Extra Large (80 days)
-            """
-        )
+            """)
 
         st.subheader("📊 Scoring Dimensions")
-        st.markdown(
-            """
+        st.markdown("""
             | # | Attribute | Max Score |
             |---|-----------|-----------|
             | 1 | Activities | 8 |
@@ -124,5 +122,4 @@ def show() -> None:
             | 4 | Target Interfaces | 4 |
             | 5 | Add. Technology | 4 |
             | | **Total** | **28** |
-            """
-        )
+            """)

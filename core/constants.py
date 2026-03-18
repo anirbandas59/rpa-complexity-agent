@@ -6,7 +6,6 @@ assessment phases, step weights, and reusability tags.
 """
 
 from enum import Enum
-from typing import Optional
 
 from core.exceptions import ScoringValidationError
 

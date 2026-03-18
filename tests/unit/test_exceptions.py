@@ -255,4 +255,6 @@ class TestExceptionHierarchy:
         assert "Multi context" in error_str
         # All context items should be present
         for key, val in context.items():
-            assert f"{key}={val}" in error_str or (key in error_str and str(val) in error_str)
+            assert f"{key}={val}" in error_str or (
+                key in error_str and str(val) in error_str
+            )

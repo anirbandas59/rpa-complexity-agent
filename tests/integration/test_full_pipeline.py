@@ -7,8 +7,9 @@ Tests the complete end-to-end pipeline using real files and real LLM calls.
 All tests in this module are marked with @pytest.mark.integration.
 """
 
-import pytest
 from pathlib import Path
+
+import pytest
 from openpyxl import load_workbook
 
 from agents import run_assessment
@@ -18,7 +19,12 @@ from core.constants import ComplexityTier
 @pytest.fixture(scope="module")
 def sample_pdf_path():
     """Path to sample_simple.pdf test fixture."""
-    path = Path(__file__).parent.parent.parent / "data" / "sample_pdds" / "sample_simple.pdf"
+    path = (
+        Path(__file__).parent.parent.parent
+        / "data"
+        / "sample_pdds"
+        / "sample_simple.pdf"
+    )
     # If fixture doesn't exist, skip this test
     if not path.exists():
         pytest.skip(f"Test fixture not found: {path}")
@@ -28,7 +34,12 @@ def sample_pdf_path():
 @pytest.fixture(scope="module")
 def sample_docx_path():
     """Path to sample_process.docx test fixture."""
-    path = Path(__file__).parent.parent.parent / "data" / "sample_pdds" / "sample_process.docx"
+    path = (
+        Path(__file__).parent.parent.parent
+        / "data"
+        / "sample_pdds"
+        / "sample_process.docx"
+    )
     # If fixture doesn't exist, skip this test
     if not path.exists():
         pytest.skip(f"Test fixture not found: {path}")
@@ -54,9 +65,10 @@ class TestFullPipeline:
         )
 
         # Pipeline must complete
-        assert result["status"] in ["success", "partial"], (
-            f"Pipeline failed: {result['errors']}"
-        )
+        assert result["status"] in [
+            "success",
+            "partial",
+        ], f"Pipeline failed: {result['errors']}"
 
         # Must produce a valid tier or None
         if result["complexity_tier"] is not None:
@@ -91,9 +103,10 @@ class TestFullPipeline:
         )
 
         # Pipeline must complete
-        assert result["status"] in ["success", "partial"], (
-            f"Pipeline failed: {result['errors']}"
-        )
+        assert result["status"] in [
+            "success",
+            "partial",
+        ], f"Pipeline failed: {result['errors']}"
 
         # Must produce a valid tier or None
         if result["complexity_tier"] is not None:
@@ -108,7 +121,7 @@ class TestFullPipeline:
         assert isinstance(attrs, dict)
 
         # Print summary for debugging
-        print(f"\n=== DOCX Pipeline Result ===")
+        print("\n=== DOCX Pipeline Result ===")
         print(f"Tier: {result['complexity_tier']}")
         print(f"Score: {result['total_score']}")
         print(f"Attributes: {attrs}")
@@ -163,9 +176,9 @@ class TestFullPipeline:
             # Must be a valid PDF (starts with %PDF)
             with open(pdf_path, "rb") as f:
                 header = f.read(4)
-                assert header == b"%PDF", (
-                    f"PDF file invalid: starts with {header!r}, not b'%PDF'"
-                )
+                assert (
+                    header == b"%PDF"
+                ), f"PDF file invalid: starts with {header!r}, not b'%PDF'"
 
     def test_pipeline_with_minimal_params(self, sample_docx_path):
         """Test pipeline with only required parameters.
@@ -286,9 +299,9 @@ class TestPipelineValidation:
         result = run_assessment(file_path=sample_docx_path)
 
         if result["confidence"] is not None:
-            assert 0.0 <= result["confidence"] <= 1.0, (
-                f"Confidence {result['confidence']} outside [0.0, 1.0]"
-            )
+            assert (
+                0.0 <= result["confidence"] <= 1.0
+            ), f"Confidence {result['confidence']} outside [0.0, 1.0]"
 
     def test_raw_attributes_non_negative(self, sample_docx_path):
         """All raw attribute values must be non-negative."""
@@ -297,12 +310,10 @@ class TestPipelineValidation:
         attrs = result["raw_attributes"]
         if attrs:
             for key, value in attrs.items():
-                assert isinstance(value, int), (
-                    f"Attribute {key} is not int: {value} ({type(value)})"
-                )
-                assert value >= 0, (
-                    f"Attribute {key} is negative: {value}"
-                )
+                assert isinstance(
+                    value, int
+                ), f"Attribute {key} is not int: {value} ({type(value)})"
+                assert value >= 0, f"Attribute {key} is negative: {value}"
 
     def test_tier_consistency(self, sample_docx_path):
         """If score exists, tier should match score range."""
@@ -324,7 +335,7 @@ class TestPipelineValidation:
             # Find matching tier for score
             for t, (min_score, max_score) in tier_mapping.items():
                 if min_score <= score <= max_score:
-                    assert tier == t.value, (
-                        f"Score {score} should map to {t.value}, got {tier}"
-                    )
+                    assert (
+                        tier == t.value
+                    ), f"Score {score} should map to {t.value}, got {tier}"
                     break

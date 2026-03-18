@@ -28,12 +28,6 @@ def build_attribute_scores(weights: list[int]) -> list[AttributeScore]:
         List of 5 AttributeScore objects
     """
     assert len(weights) == 5
-    tier_map = {
-        1: ComplexityTier.S,
-        2: ComplexityTier.M,
-        3: ComplexityTier.L,
-        4: ComplexityTier.XL,
-    }
 
     scores = []
     for attr_id in range(1, 6):
@@ -698,4 +692,6 @@ class TestWeightedScoreSummary:
         )
         summary = get_weighted_score_summary(score)
         # Should not have the violations section
-        assert "Ceiling" not in summary or ("Ceiling" in summary and "violation" not in summary.lower())
+        assert "Ceiling" not in summary or (
+            "Ceiling" in summary and "violation" not in summary.lower()
+        )

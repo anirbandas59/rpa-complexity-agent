@@ -89,7 +89,9 @@ def validate_inputs(
 
         # Check 5: Non-negative weight
         if score.weight < 0:
-            errors.append(f"Attribute {score.attribute_id} has negative weight: {score.weight}")
+            errors.append(
+                f"Attribute {score.attribute_id} has negative weight: {score.weight}"
+            )
 
         total_weight += score.weight
 
@@ -114,9 +116,7 @@ def validate_inputs(
 
     # Check 8: Warning if all weights are low
     if low_weight_count == 5:
-        warnings.append(
-            "All attributes scored low — verify PDD completeness"
-        )
+        warnings.append("All attributes scored low — verify PDD completeness")
 
     is_valid = len(errors) == 0
 

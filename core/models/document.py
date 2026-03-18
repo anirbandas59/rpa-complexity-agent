@@ -20,11 +20,13 @@ class ParsedDocument(BaseModel):
     file_type: str = Field(..., description='File type: "pdf" or "docx"')
     full_text: str = Field(..., description="Complete extracted text content")
     tables: list[list[dict[str, Any]]] = Field(
-        default_factory=list, description="List of tables, each table is a list of row dicts"
+        default_factory=list,
+        description="List of tables, each table is a list of row dicts",
     )
     page_count: int = Field(..., description="Total number of pages")
     metadata: dict[str, str] = Field(
-        default_factory=dict, description="File metadata (author, created, modified, etc.)"
+        default_factory=dict,
+        description="File metadata (author, created, modified, etc.)",
     )
     extraction_warnings: list[str] = Field(
         default_factory=list, description="Non-fatal issues during extraction"

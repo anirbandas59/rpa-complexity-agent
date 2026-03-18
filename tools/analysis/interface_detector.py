@@ -10,7 +10,6 @@ All LLM access via llm.manager.LLMManager abstraction.
 
 from __future__ import annotations
 
-import logging
 import re
 
 from pydantic import BaseModel, Field, field_validator
@@ -130,9 +129,7 @@ class InterfaceDetectionLLMResponse(BaseModel):
     applications: list[DetectedInterface] = Field(
         default_factory=list, description="List of detected interfaces"
     )
-    total_count: int = Field(
-        default=0, description="Total count of applications"
-    )
+    total_count: int = Field(default=0, description="Total count of applications")
     detection_confidence: float = Field(
         default=0.5, description="Overall detection confidence"
     )
@@ -164,9 +161,7 @@ class InterfaceDetectionResult(BaseModel):
         ..., description="List of detected interfaces"
     )
     total_count: int = Field(..., description="Total number of interfaces")
-    detection_confidence: float = Field(
-        ..., description="Overall detection confidence"
-    )
+    detection_confidence: float = Field(..., description="Overall detection confidence")
     notes: str = Field(default="", description="Additional notes")
     source: str = Field(
         ...,
@@ -276,7 +271,9 @@ def _merge_with_entity_results(
     return _deduplicate_interfaces(merged)
 
 
-def _filter_relevant_sections(sections: list[ExtractedSection]) -> list[ExtractedSection]:
+def _filter_relevant_sections(
+    sections: list[ExtractedSection],
+) -> list[ExtractedSection]:
     """Filter sections most relevant for interface detection.
 
     Priority order:

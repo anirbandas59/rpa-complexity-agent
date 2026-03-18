@@ -1,20 +1,25 @@
 """Generate PDF test fixtures for pdf_parser tests."""
 
 from pathlib import Path
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import inch
+
 from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.lib.units import inch
+from reportlab.pdfgen import canvas
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 
 def generate_simple_pdf():
     """Generate sample_simple.pdf with 2 pages of text content."""
-    output_path = Path(__file__).parent.parent.parent / "data" / "sample_pdds" / "sample_simple.pdf"
+    output_path = (
+        Path(__file__).parent.parent.parent
+        / "data"
+        / "sample_pdds"
+        / "sample_simple.pdf"
+    )
 
     # Use canvas-based approach to ensure 2 distinct pages
-    from reportlab.pdfgen import canvas
     from reportlab.lib.pagesizes import letter
 
     c = canvas.Canvas(str(output_path), pagesize=letter)
@@ -74,7 +79,12 @@ def generate_simple_pdf():
 
 def generate_table_pdf():
     """Generate sample_table.pdf with table data."""
-    output_path = Path(__file__).parent.parent.parent / "data" / "sample_pdds" / "sample_table.pdf"
+    output_path = (
+        Path(__file__).parent.parent.parent
+        / "data"
+        / "sample_pdds"
+        / "sample_table.pdf"
+    )
 
     doc = SimpleDocTemplate(
         str(output_path),
