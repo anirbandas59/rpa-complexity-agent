@@ -71,8 +71,8 @@ Usage:
   4. Download Excel/PDF reports
 
 Logs:
-  API logs: tail -f /tmp/api_server.log
-  Frontend logs: tail -f /tmp/streamlit.log
+  API logs: tail -f logs/api_server.log
+  Frontend logs: tail -f logs/streamlit.log
 
 Press Ctrl+C to stop all services
 ```
@@ -105,12 +105,12 @@ While the script is running, open another terminal:
 
 **API Server Logs:**
 ```bash
-tail -f /tmp/api_server.log
+tail -f logs/api_server.log
 ```
 
 **Streamlit Frontend Logs:**
 ```bash
-tail -f /tmp/streamlit.log
+tail -f logs/streamlit.log
 ```
 
 ### Run Services Separately (Advanced)
@@ -216,7 +216,7 @@ uv run python --version  # Should show Python 3.11
 ✅ **Health Checks** — Waits for services to be ready before proceeding
 ✅ **Colored Output** — Easy to read status messages
 ✅ **Graceful Shutdown** — Ctrl+C stops both services cleanly
-✅ **Log Files** — Persistent logs in /tmp/
+✅ **Log Files** — Persistent logs in logs/
 ✅ **Error Handling** — Detects and reports startup failures
 
 ## Environment Variables

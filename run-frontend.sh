@@ -23,6 +23,9 @@ echo ""
 
 cd "$PROJECT_ROOT"
 
+# Ensure logs directory exists
+mkdir -p "${PROJECT_ROOT}/logs"
+
 # Function to cleanup background processes on exit
 cleanup() {
     echo ""
@@ -52,7 +55,7 @@ trap cleanup INT TERM
 # ═══════════════════════════════════════════════════════════
 
 echo -e "${BLUE}[1/2]${NC} Starting FastAPI backend server..."
-uv run uvicorn api.main:app --host 127.0.0.1 --port 8000 > /tmp/api_server.log 2>&1 &
+uv run uvicorn api.main:app --host 127.0.0.1 --port 8000 > ${PROJECT_ROOT}/logs/api_server.log 2>&1 &
 API_PID=$!
 echo -e "${GREEN}✓${NC} API Server started (PID: $API_PID)"
 echo -e "    📡 API URL: ${BLUE}http://localhost:8000${NC}"
@@ -68,7 +71,7 @@ for i in {1..30}; do
     fi
     if [ $i -eq 30 ]; then
         echo -e "${RED}✗ API failed to start${NC}"
-        echo "Check logs: cat /tmp/api_server.log"
+        echo "Check logs: cat ${PROJECT_ROOT}/logs/api_server.log"
         cleanup
     fi
     sleep 1
@@ -81,7 +84,7 @@ echo ""
 # ═══════════════════════════════════════════════════════════
 
 echo -e "${BLUE}[2/2]${NC} Starting Streamlit frontend..."
-uv run streamlit run frontend/app.py > /tmp/streamlit.log 2>&1 &
+uv run streamlit run frontend/app.py > ${PROJECT_ROOT}/logs/streamlit.log 2>&1 &
 FRONTEND_PID=$!
 echo -e "${GREEN}✓${NC} Streamlit started (PID: $FRONTEND_PID)"
 
@@ -94,7 +97,7 @@ for i in {1..30}; do
     fi
     if [ $i -eq 30 ]; then
         echo -e "${RED}✗ Frontend failed to start${NC}"
-        echo "Check logs: cat /tmp/streamlit.log"
+        echo "Check logs: cat ${PROJECT_ROOT}/logs/streamlit.log"
     fi
     sleep 1
 done
@@ -114,8 +117,8 @@ echo "  3. Wait for assessment (~2-5 minutes)"
 echo "  4. Download Excel/PDF reports"
 echo ""
 echo -e "${YELLOW}Logs:${NC}"
-echo "  API logs: tail -f /tmp/api_server.log"
-echo "  Frontend logs: tail -f /tmp/streamlit.log"
+echo "  API logs: tail -f ${PROJECT_ROOT}/logs/api_server.log"
+echo "  Frontend logs: tail -f ${PROJECT_ROOT}/logs/streamlit.log"
 echo ""
 echo -e "${YELLOW}Press Ctrl+C to stop all services${NC}"
 echo ""

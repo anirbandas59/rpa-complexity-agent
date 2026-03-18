@@ -122,6 +122,48 @@ def _set_cell_formula(cell, formula, bold=False, fill_color: Optional[str] = Non
 
 
 # ===========================================================================
+# DIMENSION CONSTANTS (extracted from output_template.xlsx)
+# ===========================================================================
+
+CALC_COL_WIDTHS = {
+    "A": 2.86, "B": 15.29, "C": 6.14, "D": 61.71,
+    "E": 4.29, "F": 3.71, "G": 61.71, "H": 4.29,
+    "I": 4.0,  "J": 61.71, "K": 4.29, "L": 4.0,
+    "M": 61.71, "N": 4.29, "O": 4.0, "P": 61.71,
+    "Q": 4.29, "R": 3.71, "S": 26.0, "T": 11.29,
+    "U": 10.14, "X": 11.29,
+}
+
+CALC_ROW_HEIGHTS = {
+    1: 18.0, 7: 3.75, 8: 15.75, 9: 50.25,
+    10: 83.25, 11: 48.0, 12: 82.5, 13: 60.0,
+    14: 117.0, 15: 16.5, 16: 12.75, 18: 15.0,
+    19: 23.25, 22: 18.0, 24: 15.75, 25: 16.5,
+    29: 15.75, 30: 16.5, 31: 30.0, 35: 15.75,
+}
+
+STEPS_COL_WIDTHS = {
+    "A": 63.86, "B": 55.57, "C": 11.57, "D": 62.86,
+    "E": 3.86,  "F": 51.86, "G": 48.29, "H": 11.57,
+    "I": 58.29, "J": 4.0,   "L": 52.86, "M": 11.57,
+    "N": 33.0,
+}
+
+TIMELINE_COL_WIDTHS = {
+    "A": 1.71, "B": 35.71, "C": 21.29, "G": 7.0,
+    "I": 22.57, "J": 15.43, "K": 12.14, "L": 18.71,
+    "M": 30.29, "N": 18.71, "O": 46.71, "P": 8.71,
+}
+
+TIMELINE_ROW_HEIGHTS = {
+    1: 15.0, 2: 15.0, 3: 18.75, 4: 18.75, 5: 18.75,
+    6: 37.5, 7: 15.0, 8: 18.75, 9: 18.75, 10: 19.9,
+    11: 19.9, 12: 19.9, 13: 19.9, 16: 18.75, 17: 15.0,
+    18: 15.0,
+}
+
+
+# ===========================================================================
 # CALCULATOR SHEET
 # ===========================================================================
 
@@ -427,6 +469,13 @@ def _write_calculator_sheet(ws, assessment_result: AssessmentResult) -> None:
         )
         _set_cell_value(ws["C64"], tech_count, bold=True)
 
+    # Apply column widths and row heights from template
+    for col, width in CALC_COL_WIDTHS.items():
+        ws.column_dimensions[col].width = width
+    for row, height in CALC_ROW_HEIGHTS.items():
+        ws.row_dimensions[row].height = height
+    ws.sheet_format.defaultRowHeight = 15.0
+
 
 # ===========================================================================
 # STEPS SHEET
@@ -465,6 +514,11 @@ def _write_steps_sheet(ws, decomposition: StepDecompositionResult) -> int:
     _set_cell_value(ws[f"B{total_row}"], "TOTAL", bold=True)
     ws[f"C{total_row}"].value = f"=SUM(C3:C{total_row - 3})"
     ws[f"C{total_row}"].font = Font(bold=True)
+
+    # Apply column widths from template
+    for col, width in STEPS_COL_WIDTHS.items():
+        ws.column_dimensions[col].width = width
+    ws.sheet_format.defaultRowHeight = 15.0
 
     return total_row
 
@@ -547,25 +601,12 @@ def _write_timeline_sheet(
             _set_cell_value(ws[f"O{current_row}"], feature.remarks)
         current_row += 1
 
-    # Set column widths
-    col_widths = {
-        "B": 45,
-        "C": 12,
-        "D": 18,
-        "E": 12,
-        "F": 12,
-        "G": 8,
-        "H": 8,
-        "I": 20,
-        "J": 10,
-        "K": 14,
-        "L": 18,
-        "M": 15,
-        "N": 18,
-        "O": 30,
-    }
-    for col, width in col_widths.items():
+    # Apply column widths and row heights from template
+    for col, width in TIMELINE_COL_WIDTHS.items():
         ws.column_dimensions[col].width = width
+    for row, height in TIMELINE_ROW_HEIGHTS.items():
+        ws.row_dimensions[row].height = height
+    ws.sheet_format.defaultRowHeight = 15.0
 
 
 # ===========================================================================
