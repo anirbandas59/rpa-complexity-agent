@@ -76,6 +76,16 @@ class Settings(BaseSettings):
         description="Temporary directory for processing",
     )
 
+    # API Security
+    frontend_url: str = Field(
+        default="http://localhost:8501",
+        description="Frontend URL allowed by CORS",
+    )
+    api_secret_key: str = Field(
+        default="",
+        description="X-API-Key value required on protected endpoints; empty disables auth",
+    )
+
     # LLM Manager Behaviour
     llm_max_retries: int = Field(
         default=3,
