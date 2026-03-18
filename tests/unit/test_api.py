@@ -281,11 +281,14 @@ def test_get_status_unknown_session():
 
 def test_get_status_queued():
     """GET /api/status shows queued status with correct message."""
-    put_session("test1234", {
-        "session_id": "test1234",
-        "status": "queued",
-        "file_name": "test.pdf",
-    })
+    put_session(
+        "test1234",
+        {
+            "session_id": "test1234",
+            "status": "queued",
+            "file_name": "test.pdf",
+        },
+    )
 
     response = client.get("/api/status/test1234")
     assert response.status_code == 200
@@ -298,10 +301,13 @@ def test_get_status_queued():
 
 def test_get_status_processing():
     """GET /api/status shows processing status with correct message."""
-    put_session("test1234", {
-        "session_id": "test1234",
-        "status": "processing",
-    })
+    put_session(
+        "test1234",
+        {
+            "session_id": "test1234",
+            "status": "processing",
+        },
+    )
 
     response = client.get("/api/status/test1234")
     assert response.status_code == 200
@@ -310,10 +316,13 @@ def test_get_status_processing():
 
 def test_get_status_success(mock_assessment_result):
     """GET /api/status with success shows all results."""
-    put_session("test1234", {
-        "session_id": "test1234",
-        **mock_assessment_result,
-    })
+    put_session(
+        "test1234",
+        {
+            "session_id": "test1234",
+            **mock_assessment_result,
+        },
+    )
 
     response = client.get("/api/status/test1234")
     assert response.status_code == 200
@@ -328,11 +337,14 @@ def test_get_status_success(mock_assessment_result):
 
 def test_get_status_failed():
     """GET /api/status shows failed status with errors."""
-    put_session("test1234", {
-        "session_id": "test1234",
-        "status": "failed",
-        "errors": ["File not found"],
-    })
+    put_session(
+        "test1234",
+        {
+            "session_id": "test1234",
+            "status": "failed",
+            "errors": ["File not found"],
+        },
+    )
 
     response = client.get("/api/status/test1234")
     assert response.status_code == 200
@@ -361,10 +373,13 @@ def test_download_invalid_file_type(mock_assessment_result):
 
 def test_download_while_processing():
     """GET /api/download while status is processing returns 400."""
-    put_session("test1234", {
-        "session_id": "test1234",
-        "status": "processing",
-    })
+    put_session(
+        "test1234",
+        {
+            "session_id": "test1234",
+            "status": "processing",
+        },
+    )
 
     response = client.get("/api/download/test1234/excel")
     assert response.status_code == 400
@@ -373,11 +388,14 @@ def test_download_while_processing():
 
 def test_download_after_failure():
     """GET /api/download after failure returns 400."""
-    put_session("test1234", {
-        "session_id": "test1234",
-        "status": "failed",
-        "errors": ["Assessment failed"],
-    })
+    put_session(
+        "test1234",
+        {
+            "session_id": "test1234",
+            "status": "failed",
+            "errors": ["Assessment failed"],
+        },
+    )
 
     response = client.get("/api/download/test1234/pdf")
     assert response.status_code == 400
@@ -385,14 +403,17 @@ def test_download_after_failure():
 
 def test_download_file_missing():
     """GET /api/download when file doesn't exist returns 404."""
-    put_session("test1234", {
-        "session_id": "test1234",
-        "status": "success",
-        "output_files": {
-            "excel": "/nonexistent/file.xlsx",
-            "pdf": "/nonexistent/file.pdf",
+    put_session(
+        "test1234",
+        {
+            "session_id": "test1234",
+            "status": "success",
+            "output_files": {
+                "excel": "/nonexistent/file.xlsx",
+                "pdf": "/nonexistent/file.pdf",
+            },
         },
-    })
+    )
 
     response = client.get("/api/download/test1234/excel")
     assert response.status_code == 404
@@ -404,14 +425,17 @@ def test_download_excel_success(tmp_path):
     excel_file = tmp_path / "test.xlsx"
     excel_file.write_bytes(b"test excel content")
 
-    put_session("test1234", {
-        "session_id": "test1234",
-        "status": "success",
-        "output_files": {
-            "excel": str(excel_file),
-            "pdf": "",
+    put_session(
+        "test1234",
+        {
+            "session_id": "test1234",
+            "status": "success",
+            "output_files": {
+                "excel": str(excel_file),
+                "pdf": "",
+            },
         },
-    })
+    )
 
     response = client.get("/api/download/test1234/excel")
     assert response.status_code == 200
@@ -447,7 +471,9 @@ def test_full_upload_status_flow(mock_task, sample_docx_file, mock_assessment_re
 
     # Step 3: Manually populate session with results (simulating background task)
     existing = get_session_sync(session_id) or {}
-    put_session(session_id, {**existing, **mock_assessment_result, "session_id": session_id})
+    put_session(
+        session_id, {**existing, **mock_assessment_result, "session_id": session_id}
+    )
 
     # Step 4: Check status is now success
     response = client.get(f"/api/status/{session_id}")
@@ -469,10 +495,13 @@ def test_exception_handler_agent_execution_error():
             context={"session_id": "test123"},
         )
 
-        put_session("test123", {
-            "session_id": "test123",
-            "status": "processing",
-        })
+        put_session(
+            "test123",
+            {
+                "session_id": "test123",
+                "status": "processing",
+            },
+        )
 
         # Direct call would trigger handler, but with mock it won't reach that far.
         # This is implicitly tested in integration tests.

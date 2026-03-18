@@ -11,6 +11,8 @@ dist/
 build/
 *.egg-info/
 .eggs/
+.streamlit/
+.ruff_cache/
 
 # UV
 .uv/
@@ -56,3 +58,4 @@ htmlcov/
 .mypy_cache/
 
 .claude/worktrees/
+/.claude

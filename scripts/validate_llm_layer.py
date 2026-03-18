@@ -476,21 +476,22 @@ def validate_section_d():
             message: str
 
         manager = LLMManager()
-        result = manager.complete_structured(
+        structured_result = manager.complete_structured(
             prompt="Return a JSON with status='ok' and message='ready'",
             response_schema=StatusResponse,
             max_tokens=50,
             session_id="validate_llm_layer_structured",
         )
+        assert isinstance(structured_result, StatusResponse)
 
         d3_pass = (
-            isinstance(result, StatusResponse)
-            and result.status is not None
-            and len(result.status) > 0
+            structured_result.status is not None and len(structured_result.status) > 0
         )
         print_result("D3", d3_pass, "Structured completion call")
         if d3_pass:
-            print(f"    Result: status={result.status}, message={result.message}")
+            print(
+                f"    Result: status={structured_result.status}, message={structured_result.message}"
+            )
 
     except Exception as e:
         print_result("D3", False, "Structured completion call", f"exception: {e}")

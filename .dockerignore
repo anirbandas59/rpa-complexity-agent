@@ -19,3 +19,4 @@ tests/
 .claude/
 scripts/validate_*.py
 main.py
+.streamlit/

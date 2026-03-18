@@ -9,20 +9,20 @@ import streamlit as st
 # ── Domain constants (frontend-only, mirrors weight_matrix.json) ─────────────
 
 _WEIGHTS: dict[str, dict[str, int]] = {
-    "activities":     {"XS": 2, "S": 2, "M": 4, "L": 6, "XL": 8},
+    "activities": {"XS": 2, "S": 2, "M": 4, "L": 6, "XL": 8},
     "business_rules": {"XS": 2, "S": 2, "M": 4, "L": 6, "XL": 8},
-    "layouts":        {"XS": 1, "S": 1, "M": 2, "L": 3, "XL": 4},
-    "interfaces":     {"XS": 1, "S": 1, "M": 2, "L": 3, "XL": 4},
-    "technology":     {"XS": 1, "S": 1, "M": 2, "L": 3, "XL": 4},
+    "layouts": {"XS": 1, "S": 1, "M": 2, "L": 3, "XL": 4},
+    "interfaces": {"XS": 1, "S": 1, "M": 2, "L": 3, "XL": 4},
+    "technology": {"XS": 1, "S": 1, "M": 2, "L": 3, "XL": 4},
 }
 
 # Attribute display order matches scoring sheet
 _ATTR_DEFS: list[tuple[str, str]] = [
-    ("activities",     "#1 Activities"),
+    ("activities", "#1 Activities"),
     ("business_rules", "#2 Business Rules"),
-    ("layouts",        "#3 Digital Layouts"),
-    ("interfaces",     "#4 Target Interfaces"),
-    ("technology",     "#5 Add. Technology"),
+    ("layouts", "#3 Digital Layouts"),
+    ("interfaces", "#4 Target Interfaces"),
+    ("technology", "#5 Add. Technology"),
 ]
 
 _TIERS = ["XS", "S", "M", "L", "XL"]
@@ -30,9 +30,9 @@ _TIERS = ["XS", "S", "M", "L", "XL"]
 # Colors match complexity_gauge.TIER_COLORS
 _TIER_COLORS: dict[str, str] = {
     "XS": "#22c55e",
-    "S":  "#84cc16",
-    "M":  "#eab308",
-    "L":  "#f97316",
+    "S": "#84cc16",
+    "M": "#eab308",
+    "L": "#f97316",
     "XL": "#ef4444",
 }
 
@@ -195,9 +195,7 @@ def show() -> None:
                     )
 
             if st.button("Recalculate", key="_recalc_btn", type="primary"):
-                new_score = sum(
-                    _WEIGHTS[k].get(v, 0) for k, v in selections.items()
-                )
+                new_score = sum(_WEIGHTS[k].get(v, 0) for k, v in selections.items())
                 all_xs = all(v == "XS" for v in selections.values())
                 new_tier = _classify(new_score, all_xs)
                 st.session_state["_recalc"] = {
