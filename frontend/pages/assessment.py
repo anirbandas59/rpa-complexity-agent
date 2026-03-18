@@ -6,6 +6,39 @@ import streamlit as st
 
 MAX_POLL_ATTEMPTS = 120  # 6 minutes at 3-second intervals
 
+# ── Error message mapping ─────────────────────────────────────────────────────
+
+_ERROR_PATTERNS: list[tuple[tuple[str, ...], str]] = [
+    (
+        ("encrypted", "password"),
+        "Your PDF is password-protected. Please provide an unprotected version.",
+    ),
+    (
+        ("ocr", "image-only", "no text"),
+        "Your PDF appears to be scanned. Try a text-based PDF.",
+    ),
+    (
+        ("rate", "429"),
+        "LLM quota exceeded. Try switching to Ollama in .env settings.",
+    ),
+    (
+        ("no steps", "no activities"),
+        "No RPA process steps were detected. Verify this is a Process Design Document.",
+    ),
+]
+
+
+def _friendly_error(raw: str) -> str:
+    """Map a known error string to a user-friendly message.
+
+    Falls back to the raw string if no pattern matches.
+    """
+    lower = raw.lower()
+    for keywords, message in _ERROR_PATTERNS:
+        if any(kw in lower for kw in keywords):
+            return message
+    return raw
+
 
 def show() -> None:
     """Render the assessment progress page."""
@@ -95,8 +128,9 @@ def show() -> None:
         st.rerun()
     elif current_status == "failed":
         errors = status_data.get("errors", [])
-        error_msg = ", ".join(errors) if errors else "Unknown error"
-        st.error(f"❌ Assessment failed: {error_msg}")
+        friendly = [_friendly_error(e) for e in errors] if errors else ["Unknown error"]
+        for msg in friendly:
+            st.error(f"❌ {msg}")
         if st.button("Try Again"):
             st.session_state["page"] = "upload"
             st.rerun()
@@ -109,7 +143,7 @@ def show() -> None:
         return
     elif current_status == "error":
         error_msg = status_data.get("message", "Unknown error")
-        st.error(f"❌ Error: {error_msg}")
+        st.error(f"❌ {_friendly_error(error_msg)}")
         return
 
     # Auto-refresh with bounded poll count

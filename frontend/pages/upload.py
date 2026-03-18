@@ -1,8 +1,19 @@
 """Upload page — PDD file upload form."""
 
 from datetime import date
+from pathlib import Path
 
 import streamlit as st
+
+
+def _suggest_project_name(filename: str) -> str:
+    """Derive a human-readable project name from a filename.
+
+    Strips the extension, replaces underscores and hyphens with spaces,
+    and applies title-case.
+    """
+    stem = Path(filename).stem
+    return stem.replace("_", " ").replace("-", " ").title()
 
 
 def show() -> None:
@@ -28,8 +39,12 @@ def show() -> None:
 
         st.subheader("⚙️ Assessment Configuration")
 
+        # Auto-populate project name from filename; user can still edit
+        suggested_name = _suggest_project_name(file.name) if file is not None else ""
+
         project_name = st.text_input(
             "Project Name",
+            value=suggested_name,
             placeholder="e.g. SAP ASM Automation",
             help="Name of the automation project",
         )

@@ -33,6 +33,7 @@ Thumbs.db
 # Project outputs
 data/outputs/
 data/temp/
+data/sessions.db
 *.xlsx
 *.xls
 *.pdf
