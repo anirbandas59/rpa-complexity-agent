@@ -13,7 +13,15 @@ from pathlib import Path
 from typing import Optional
 
 import aiosqlite
-from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, Request, UploadFile
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    File,
+    Form,
+    HTTPException,
+    Request,
+    UploadFile,
+)
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 

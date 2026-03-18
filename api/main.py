@@ -28,8 +28,8 @@ logger = get_logger("api.startup")
 
 DB_PATH = "data/sessions.db"
 
-_TTL_INTERVAL = 30 * 60   # seconds between cleanup runs
-_SESSION_TTL  = 86_400    # seconds — delete sessions older than 24 hours
+_TTL_INTERVAL = 30 * 60  # seconds between cleanup runs
+_SESSION_TTL = 86_400  # seconds — delete sessions older than 24 hours
 
 
 async def _ttl_cleanup_loop() -> None:
@@ -39,9 +39,7 @@ async def _ttl_cleanup_loop() -> None:
         cutoff = time.time() - _SESSION_TTL
         try:
             async with aiosqlite.connect(DB_PATH) as db:
-                await db.execute(
-                    "DELETE FROM sessions WHERE created_at < ?", (cutoff,)
-                )
+                await db.execute("DELETE FROM sessions WHERE created_at < ?", (cutoff,))
                 await db.commit()
             logger.debug("TTL cleanup: deleted sessions older than 24 h")
         except Exception as exc:
@@ -70,8 +68,7 @@ async def lifespan(app: FastAPI):
 
     # Initialise SQLite session store
     async with aiosqlite.connect(DB_PATH) as db:
-        await db.execute(
-            """
+        await db.execute("""
             CREATE TABLE IF NOT EXISTS sessions (
                 session_id  TEXT PRIMARY KEY,
                 status      TEXT,
@@ -81,8 +78,7 @@ async def lifespan(app: FastAPI):
                 output_excel TEXT,
                 output_pdf   TEXT
             )
-            """
-        )
+            """)
         await db.commit()
     logger.info(f"Session DB initialised at {DB_PATH}")
 

@@ -7,17 +7,17 @@ import streamlit as st
 # Canonical color map shared with results.py bar chart
 TIER_COLORS: dict[str, str] = {
     "XS": "#22c55e",
-    "S":  "#84cc16",
-    "M":  "#eab308",
-    "L":  "#f97316",
+    "S": "#84cc16",
+    "M": "#eab308",
+    "L": "#f97316",
     "XL": "#ef4444",
 }
 
 _TIER_STYLES: dict[str, dict] = {
     "XS": {"bg": "#22c55e", "text": "#1a1a1a", "label": "Extra Small"},
-    "S":  {"bg": "#84cc16", "text": "#1a1a1a", "label": "Small"},
-    "M":  {"bg": "#eab308", "text": "#1a1a1a", "label": "Medium"},
-    "L":  {"bg": "#f97316", "text": "#ffffff", "label": "Large"},
+    "S": {"bg": "#84cc16", "text": "#1a1a1a", "label": "Small"},
+    "M": {"bg": "#eab308", "text": "#1a1a1a", "label": "Medium"},
+    "L": {"bg": "#f97316", "text": "#ffffff", "label": "Large"},
     "XL": {"bg": "#ef4444", "text": "#ffffff", "label": "Extra Large"},
 }
 
