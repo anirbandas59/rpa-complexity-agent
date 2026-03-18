@@ -4,6 +4,8 @@ import time
 
 import streamlit as st
 
+MAX_POLL_ATTEMPTS = 120  # 6 minutes at 3-second intervals
+
 
 def show() -> None:
     """Render the assessment progress page."""
@@ -110,13 +112,12 @@ def show() -> None:
         st.error(f"❌ Error: {error_msg}")
         return
 
-    # Auto-refresh mechanism
+    # Auto-refresh with bounded poll count
     poll_count = st.session_state.get("poll_count", 0)
-    max_polls = 100  # 5 minutes timeout (100 * 3 seconds)
 
-    st.caption(f"Auto-refreshing... (poll #{poll_count + 1}/{max_polls})")
+    st.caption(f"Auto-refreshing... (poll #{poll_count + 1}/{MAX_POLL_ATTEMPTS})")
 
-    if poll_count < max_polls and current_status not in [
+    if poll_count < MAX_POLL_ATTEMPTS and current_status not in [
         "success",
         "partial",
         "failed",
@@ -124,5 +125,5 @@ def show() -> None:
         st.session_state["poll_count"] = poll_count + 1
         time.sleep(3)
         st.rerun()
-    elif poll_count >= max_polls:
-        st.error("⏱️ Assessment timed out after 5 minutes. Please try again.")
+    elif poll_count >= MAX_POLL_ATTEMPTS:
+        st.error("Assessment is taking too long. Please try again.")

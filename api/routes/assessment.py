@@ -5,28 +5,93 @@ Handles document uploads, background assessment processing, status polling,
 and output file downloads.
 """
 
-import shutil
+import asyncio
+import json
+import time
 import uuid
 from pathlib import Path
 from typing import Optional
 
-from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, UploadFile
+import aiosqlite
+from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from agents import run_assessment
+from api.limiter import limiter
 from config.logging_config import get_logger
 
 router = APIRouter(prefix="/api", tags=["assessment"])
 
 logger = get_logger("api.assessment")
 
-# In-memory session store: session_id → result dict
-# Status values: "queued" | "processing" | "success" | "partial" | "failed"
-_sessions: dict[str, dict] = {}
+DB_PATH = "data/sessions.db"
 
 
-# ─── Pydantic Models ────────────────────────────────────────────────────
+# ─── SQLite session helpers ──────────────────────────────────────────────────
+
+
+async def get_session(session_id: str) -> dict | None:
+    """Return session data dict, or None if not found."""
+    async with aiosqlite.connect(DB_PATH) as db:
+        async with db.execute(
+            "SELECT status, result_json FROM sessions WHERE session_id = ?",
+            (session_id,),
+        ) as cursor:
+            row = await cursor.fetchone()
+
+    if row is None:
+        return None
+
+    result: dict = json.loads(row[1]) if row[1] else {}
+    # DB columns are authoritative for frequently-updated fields
+    result["session_id"] = session_id
+    result["status"] = row[0]
+    return result
+
+
+async def set_session(session_id: str, data: dict) -> None:
+    """Upsert session row.  created_at is preserved on conflict."""
+    status = data.get("status", "queued")
+    output_files = data.get("output_files") or {}
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            """
+            INSERT INTO sessions
+                (session_id, status, created_at, result_json, errors,
+                 output_excel, output_pdf)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(session_id) DO UPDATE SET
+                status       = excluded.status,
+                result_json  = excluded.result_json,
+                errors       = excluded.errors,
+                output_excel = excluded.output_excel,
+                output_pdf   = excluded.output_pdf
+            """,
+            (
+                session_id,
+                status,
+                time.time(),
+                json.dumps(data),
+                json.dumps(data.get("errors", [])),
+                output_files.get("excel", ""),
+                output_files.get("pdf", ""),
+            ),
+        )
+        await db.commit()
+
+
+async def _patch_status(session_id: str, status: str) -> None:
+    """Update only the status column (used for the processing→queued transition)."""
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            "UPDATE sessions SET status = ? WHERE session_id = ?",
+            (status, session_id),
+        )
+        await db.commit()
+
+
+# ─── Pydantic Models ─────────────────────────────────────────────────────────
 
 
 class AssessmentRequest(BaseModel):
@@ -69,52 +134,58 @@ class StatusResponse(BaseModel):
     message: str = ""
 
 
-# ─── Background Task ────────────────────────────────────────────────────
+# ─── Background Task ─────────────────────────────────────────────────────────
 
 
-def _run_assessment_task(
+async def _run_assessment_task(
     session_id: str,
     file_path: str,
     request: AssessmentRequest,
 ) -> None:
     """
-    Run assessment in background.
+    Run assessment in background (async).
 
     Steps:
     1. Update status to "processing"
-    2. Call run_assessment()
-    3. Store result
+    2. Call run_assessment() via thread executor (sync function)
+    3. Persist full result
     4. Clean up uploaded file
     5. On error, set status to "failed" and store error
     """
     try:
         # Step 1: Update status
-        _sessions[session_id]["status"] = "processing"
+        await _patch_status(session_id, "processing")
         logger.info(f"[{session_id}] Assessment processing started")
 
-        # Step 2: Call run_assessment
-        result = run_assessment(
-            file_path=file_path,
-            rpa_tool=request.rpa_tool,
-            project_name=request.project_name,
-            start_date=request.start_date,
-            developer_name=request.developer_name,
-            business_analyst=request.business_analyst,
-            squad=request.squad,
-            session_id=session_id,
+        # Step 2: Run sync assessment in thread pool so the event loop stays free
+        loop = asyncio.get_event_loop()
+        result: dict = await loop.run_in_executor(
+            None,
+            lambda: run_assessment(
+                file_path=file_path,
+                rpa_tool=request.rpa_tool,
+                project_name=request.project_name,
+                start_date=request.start_date,
+                developer_name=request.developer_name,
+                business_analyst=request.business_analyst,
+                squad=request.squad,
+                session_id=session_id,
+            ),
         )
 
-        # Step 3: Store result
-        _sessions[session_id].update(result)
-        _sessions[session_id]["status"] = result.get("status", "failed")
+        # Step 3: Persist result
+        result["session_id"] = session_id
+        await set_session(session_id, result)
         logger.info(
             f"[{session_id}] Assessment completed with status={result.get('status')}"
         )
 
     except Exception as e:
         logger.error(f"[{session_id}] Assessment failed: {e}", exc_info=True)
-        _sessions[session_id]["status"] = "failed"
-        _sessions[session_id]["errors"] = [str(e)]
+        await set_session(
+            session_id,
+            {"session_id": session_id, "status": "failed", "errors": [str(e)]},
+        )
 
     finally:
         # Step 4: Clean up uploaded file
@@ -125,11 +196,13 @@ def _run_assessment_task(
             logger.warning(f"[{session_id}] Failed to clean up file: {e}")
 
 
-# ─── Endpoints ──────────────────────────────────────────────────────────
+# ─── Endpoints ───────────────────────────────────────────────────────────────
 
 
 @router.post("/assess", response_model=AssessmentResponse)
+@limiter.limit("10/minute")
 async def upload_assessment(
+    request: Request,
     file: UploadFile = File(...),
     background_tasks: BackgroundTasks = None,
     rpa_tool: str = Form("unknown"),
@@ -148,7 +221,7 @@ async def upload_assessment(
 
     Returns immediately with session_id. Client polls GET /api/status/{session_id}.
     """
-    # Step 1: Validate file
+    # Step 1: Validate file name and extension
     if not file.filename:
         raise HTTPException(status_code=400, detail="File name is required")
 
@@ -159,23 +232,28 @@ async def upload_assessment(
             detail="Only PDF and DOCX files are supported",
         )
 
-    # Step 2: Generate session_id
+    # Step 2: Read contents and enforce 20 MB size limit
+    contents = await file.read()
+    if len(contents) > 20 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="File exceeds 20MB limit")
+
+    # Step 3: Generate session_id
     session_id = str(uuid.uuid4())[:8]
 
-    # Step 3: Save uploaded file to data/temp/
+    # Step 4: Save uploaded file to data/temp/
     save_dir = Path("data/temp")
     save_dir.mkdir(parents=True, exist_ok=True)
     save_path = save_dir / f"{session_id}{ext}"
 
     try:
         with save_path.open("wb") as f:
-            shutil.copyfileobj(file.file, f)
+            f.write(contents)
     except Exception as e:
         logger.error(f"[{session_id}] Failed to save file: {e}")
         raise HTTPException(status_code=500, detail="Failed to save uploaded file")
 
-    # Step 4: Initialize session
-    request = AssessmentRequest(
+    # Step 5: Persist initial session record
+    assessment_request = AssessmentRequest(
         rpa_tool=rpa_tool,
         project_name=project_name,
         start_date=start_date,
@@ -183,21 +261,24 @@ async def upload_assessment(
         business_analyst=business_analyst,
         squad=squad,
     )
-    _sessions[session_id] = {
-        "session_id": session_id,
-        "status": "queued",
-        "file_name": file.filename,
-    }
+    await set_session(
+        session_id,
+        {
+            "session_id": session_id,
+            "status": "queued",
+            "file_name": file.filename,
+        },
+    )
 
-    # Step 5: Add background task
+    # Step 6: Add background task
     background_tasks.add_task(
         _run_assessment_task,
         session_id,
         str(save_path),
-        request,
+        assessment_request,
     )
 
-    # Step 6: Return immediately
+    # Step 7: Return immediately
     return AssessmentResponse(
         session_id=session_id,
         status="queued",
@@ -217,10 +298,10 @@ async def get_status(session_id: str):
     - "partial": Completed with warnings
     - "failed": Assessment failed
     """
-    if session_id not in _sessions:
+    session = await get_session(session_id)
+    if session is None:
         raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
 
-    session = _sessions[session_id]
     status = session.get("status", "unknown")
 
     # Build message based on status
@@ -249,13 +330,13 @@ async def download_output(session_id: str, file_type: str):
     Returns 404 if session not found, 400 if still processing or failed,
     or 404 if file does not exist.
     """
-    if session_id not in _sessions:
+    session = await get_session(session_id)
+    if session is None:
         raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
 
     if file_type not in ["excel", "pdf"]:
         raise HTTPException(status_code=400, detail="file_type must be excel or pdf")
 
-    session = _sessions[session_id]
     status = session.get("status", "unknown")
 
     # Only allow download if assessment succeeded
@@ -266,7 +347,7 @@ async def download_output(session_id: str, file_type: str):
         )
 
     # Get file path from output_files
-    output_files = session.get("output_files", {})
+    output_files = session.get("output_files") or {}
     file_path = output_files.get(file_type, "")
 
     if not file_path or not Path(file_path).exists():
@@ -277,23 +358,3 @@ async def download_output(session_id: str, file_type: str):
         filename=Path(file_path).name,
         media_type="application/octet-stream",
     )
-
-
-@router.get("/sessions")
-async def list_sessions():
-    """
-    Get all sessions (for debugging).
-
-    Returns list of session summaries: session_id, status, file_name, complexity_tier.
-    """
-    summaries = []
-    for session_id, session in _sessions.items():
-        summaries.append(
-            {
-                "session_id": session_id,
-                "status": session.get("status", "unknown"),
-                "file_name": session.get("file_name", ""),
-                "complexity_tier": session.get("complexity_tier"),
-            }
-        )
-    return summaries

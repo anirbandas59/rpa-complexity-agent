@@ -5,44 +5,89 @@ Tests exception handlers, health endpoints, assessment endpoints,
 status polling, downloads, and the full upload-to-result flow.
 """
 
+import asyncio
 import io
 from unittest.mock import patch
 
+import aiosqlite
 import pytest
 from fastapi.testclient import TestClient
 
 from api.main import app
-from api.routes.assessment import AssessmentRequest, _sessions
+from api.routes.assessment import AssessmentRequest, get_session, set_session
 from core.exceptions import AgentExecutionError
 
-# Test client
+# ─── Test DB helpers ─────────────────────────────────────────────────────────
+
+TEST_DB = "/tmp/rpa_test_sessions.db"
+
+_CREATE_TABLE = """
+    CREATE TABLE IF NOT EXISTS sessions (
+        session_id   TEXT PRIMARY KEY,
+        status       TEXT,
+        created_at   REAL,
+        result_json  TEXT,
+        errors       TEXT,
+        output_excel TEXT,
+        output_pdf   TEXT
+    )
+"""
+
+
+async def _init_db() -> None:
+    async with aiosqlite.connect(TEST_DB) as db:
+        await db.execute(_CREATE_TABLE)
+        await db.commit()
+
+
+async def _clear_db() -> None:
+    async with aiosqlite.connect(TEST_DB) as db:
+        await db.execute("DELETE FROM sessions")
+        await db.commit()
+
+
+def put_session(session_id: str, data: dict) -> None:
+    """Sync helper: upsert a session row for test setup."""
+    asyncio.run(set_session(session_id, data))
+
+
+def get_session_sync(session_id: str) -> dict | None:
+    """Sync helper: fetch a session row for test assertions."""
+    return asyncio.run(get_session(session_id))
+
+
+# ─── Fixtures ────────────────────────────────────────────────────────────────
+
 client = TestClient(app)
 
 
-# ─── Fixtures ────────────────────────────────────────────────────────
-
-
 @pytest.fixture(autouse=True)
-def clear_sessions():
-    """Clear sessions before each test."""
-    _sessions.clear()
+def use_test_db(monkeypatch):
+    """Redirect all DB calls to an isolated temp DB and clear it between tests."""
+    monkeypatch.setattr("api.routes.assessment.DB_PATH", TEST_DB)
+    asyncio.run(_init_db())
+    asyncio.run(_clear_db())
     yield
-    _sessions.clear()
+    asyncio.run(_clear_db())
 
 
 @pytest.fixture
 def sample_pdf_file():
     """Create a sample PDF file for upload."""
-    # Minimal PDF header
-    pdf_content = b"%PDF-1.4\n%comment\n1 0 obj\n<</Type /Catalog>>\nendobj\nxref\n0 1\n0000000000 65535 f\ntrailer\n<</Size 1>>\nstartxref\n0\n%%EOF"
+    pdf_content = (
+        b"%PDF-1.4\n%comment\n1 0 obj\n<</Type /Catalog>>\nendobj\n"
+        b"xref\n0 1\n0000000000 65535 f\ntrailer\n<</Size 1>>\nstartxref\n0\n%%EOF"
+    )
     return io.BytesIO(pdf_content)
 
 
 @pytest.fixture
 def sample_docx_file():
     """Create a sample DOCX file for upload (ZIP format)."""
-    # Minimal ZIP with .docx extension
-    zip_content = b"PK\x03\x04\x14\x00\x00\x00\x08\x00\x00\x00!\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x08\x00\x00\x00test.txt\x00test"
+    zip_content = (
+        b"PK\x03\x04\x14\x00\x00\x00\x08\x00\x00\x00!\x00\x00\x00\x00\x00"
+        b"\x00\x00\x00\x00\x00\x00\x00\x00\x08\x00\x00\x00test.txt\x00test"
+    )
     return io.BytesIO(zip_content)
 
 
@@ -78,7 +123,7 @@ def mock_assessment_result():
     }
 
 
-# ─── Health Endpoint Tests ──────────────────────────────────────────
+# ─── Health Endpoint Tests ───────────────────────────────────────────────────
 
 
 def test_health_endpoint():
@@ -117,7 +162,7 @@ def test_version_endpoint():
     assert "document_intelligence" in data["agents"]
 
 
-# ─── Assessment Upload Tests ────────────────────────────────────────
+# ─── Assessment Upload Tests ─────────────────────────────────────────────────
 
 
 @patch("api.routes.assessment._run_assessment_task")
@@ -138,9 +183,10 @@ def test_post_assess_valid_pdf(mock_task, sample_pdf_file):
     assert data["status"] == "queued"
     assert "Assessment queued" in data["message"]
 
-    # Session should be in store
-    assert data["session_id"] in _sessions
-    assert _sessions[data["session_id"]]["status"] == "queued"
+    # Session should be in DB
+    session = get_session_sync(data["session_id"])
+    assert session is not None
+    assert session["status"] == "queued"
 
     # Background task should be scheduled
     mock_task.assert_called_once()
@@ -217,12 +263,13 @@ def test_post_assess_with_all_form_fields(mock_task, sample_docx_file):
 
     assert response.status_code == 200
     session_id = response.json()["session_id"]
-    session = _sessions[session_id]
+    session = get_session_sync(session_id)
+    assert session is not None
     assert session["file_name"] == "test.docx"
     mock_task.assert_called_once()
 
 
-# ─── Status Endpoint Tests ──────────────────────────────────────────
+# ─── Status Endpoint Tests ───────────────────────────────────────────────────
 
 
 def test_get_status_unknown_session():
@@ -234,12 +281,11 @@ def test_get_status_unknown_session():
 
 def test_get_status_queued():
     """GET /api/status shows queued status with correct message."""
-    # Manually create a queued session
-    _sessions["test1234"] = {
+    put_session("test1234", {
         "session_id": "test1234",
         "status": "queued",
         "file_name": "test.pdf",
-    }
+    })
 
     response = client.get("/api/status/test1234")
     assert response.status_code == 200
@@ -252,10 +298,10 @@ def test_get_status_queued():
 
 def test_get_status_processing():
     """GET /api/status shows processing status with correct message."""
-    _sessions["test1234"] = {
+    put_session("test1234", {
         "session_id": "test1234",
         "status": "processing",
-    }
+    })
 
     response = client.get("/api/status/test1234")
     assert response.status_code == 200
@@ -264,10 +310,10 @@ def test_get_status_processing():
 
 def test_get_status_success(mock_assessment_result):
     """GET /api/status with success shows all results."""
-    _sessions["test1234"] = {
+    put_session("test1234", {
         "session_id": "test1234",
         **mock_assessment_result,
-    }
+    })
 
     response = client.get("/api/status/test1234")
     assert response.status_code == 200
@@ -282,11 +328,11 @@ def test_get_status_success(mock_assessment_result):
 
 def test_get_status_failed():
     """GET /api/status shows failed status with errors."""
-    _sessions["test1234"] = {
+    put_session("test1234", {
         "session_id": "test1234",
         "status": "failed",
         "errors": ["File not found"],
-    }
+    })
 
     response = client.get("/api/status/test1234")
     assert response.status_code == 200
@@ -294,7 +340,7 @@ def test_get_status_failed():
     assert response.json()["errors"] == ["File not found"]
 
 
-# ─── Download Endpoint Tests ────────────────────────────────────────
+# ─── Download Endpoint Tests ─────────────────────────────────────────────────
 
 
 def test_download_excel_not_found():
@@ -306,10 +352,7 @@ def test_download_excel_not_found():
 
 def test_download_invalid_file_type(mock_assessment_result):
     """GET /api/download with invalid file_type returns 400."""
-    _sessions["test1234"] = {
-        "session_id": "test1234",
-        **mock_assessment_result,
-    }
+    put_session("test1234", {"session_id": "test1234", **mock_assessment_result})
 
     response = client.get("/api/download/test1234/csv")
     assert response.status_code == 400
@@ -318,10 +361,10 @@ def test_download_invalid_file_type(mock_assessment_result):
 
 def test_download_while_processing():
     """GET /api/download while status is processing returns 400."""
-    _sessions["test1234"] = {
+    put_session("test1234", {
         "session_id": "test1234",
         "status": "processing",
-    }
+    })
 
     response = client.get("/api/download/test1234/excel")
     assert response.status_code == 400
@@ -330,26 +373,26 @@ def test_download_while_processing():
 
 def test_download_after_failure():
     """GET /api/download after failure returns 400."""
-    _sessions["test1234"] = {
+    put_session("test1234", {
         "session_id": "test1234",
         "status": "failed",
         "errors": ["Assessment failed"],
-    }
+    })
 
     response = client.get("/api/download/test1234/pdf")
     assert response.status_code == 400
 
 
-def test_download_file_missing(tmp_path):
+def test_download_file_missing():
     """GET /api/download when file doesn't exist returns 404."""
-    _sessions["test1234"] = {
+    put_session("test1234", {
         "session_id": "test1234",
         "status": "success",
         "output_files": {
             "excel": "/nonexistent/file.xlsx",
             "pdf": "/nonexistent/file.pdf",
         },
-    }
+    })
 
     response = client.get("/api/download/test1234/excel")
     assert response.status_code == 404
@@ -358,18 +401,17 @@ def test_download_file_missing(tmp_path):
 
 def test_download_excel_success(tmp_path):
     """GET /api/download/excel returns file when it exists."""
-    # Create a temporary file
     excel_file = tmp_path / "test.xlsx"
     excel_file.write_bytes(b"test excel content")
 
-    _sessions["test1234"] = {
+    put_session("test1234", {
         "session_id": "test1234",
         "status": "success",
         "output_files": {
             "excel": str(excel_file),
             "pdf": "",
         },
-    }
+    })
 
     response = client.get("/api/download/test1234/excel")
     assert response.status_code == 200
@@ -377,48 +419,13 @@ def test_download_excel_success(tmp_path):
     assert "test.xlsx" in response.headers["content-disposition"]
 
 
-# ─── Sessions Endpoint Tests ────────────────────────────────────────
-
-
-def test_get_sessions_empty():
-    """GET /api/sessions returns empty list when no sessions."""
-    response = client.get("/api/sessions")
-    assert response.status_code == 200
-    assert response.json() == []
-
-
-def test_get_sessions_multiple():
-    """GET /api/sessions returns all sessions."""
-    _sessions["sess1"] = {
-        "session_id": "sess1",
-        "status": "success",
-        "file_name": "doc1.pdf",
-        "complexity_tier": "M",
-    }
-    _sessions["sess2"] = {
-        "session_id": "sess2",
-        "status": "processing",
-        "file_name": "doc2.docx",
-    }
-
-    response = client.get("/api/sessions")
-    assert response.status_code == 200
-
-    data = response.json()
-    assert len(data) == 2
-    assert data[0]["session_id"] == "sess1"
-    assert data[1]["session_id"] == "sess2"
-
-
-# ─── Full Flow Test ────────────────────────────────────────────────
+# ─── Full Flow Test ──────────────────────────────────────────────────────────
 
 
 @patch("api.routes.assessment._run_assessment_task")
 def test_full_upload_status_flow(mock_task, sample_docx_file, mock_assessment_result):
     """
     Full flow: Upload → Get Status (queued) → Simulate completion → Get Status (success).
-
-    This test mocks _run_assessment_task to simulate background completion.
     """
     # Step 1: Upload file
     response = client.post(
@@ -439,7 +446,8 @@ def test_full_upload_status_flow(mock_task, sample_docx_file, mock_assessment_re
     assert response.json()["status"] == "queued"
 
     # Step 3: Manually populate session with results (simulating background task)
-    _sessions[session_id].update(mock_assessment_result)
+    existing = get_session_sync(session_id) or {}
+    put_session(session_id, {**existing, **mock_assessment_result, "session_id": session_id})
 
     # Step 4: Check status is now success
     response = client.get(f"/api/status/{session_id}")
@@ -450,7 +458,7 @@ def test_full_upload_status_flow(mock_task, sample_docx_file, mock_assessment_re
     assert data["total_score"] == 10
 
 
-# ─── Exception Handler Tests ────────────────────────────────────────
+# ─── Exception Handler Tests ─────────────────────────────────────────────────
 
 
 def test_exception_handler_agent_execution_error():
@@ -461,11 +469,10 @@ def test_exception_handler_agent_execution_error():
             context={"session_id": "test123"},
         )
 
-        # Create a session so the error happens in background
-        _sessions["test123"] = {
+        put_session("test123", {
             "session_id": "test123",
             "status": "processing",
-        }
+        })
 
         # Direct call would trigger handler, but with mock it won't reach that far.
         # This is implicitly tested in integration tests.
@@ -474,13 +481,11 @@ def test_exception_handler_agent_execution_error():
 
 def test_value_error_handler():
     """ValueError from validation is caught and returns 400."""
-    # This would be caught by FastAPI's validation, not our handler
-    # Implicit test via form validation
     response = client.post("/api/assess")
     assert response.status_code == 422  # FastAPI validation error
 
 
-# ─── Integration Test ──────────────────────────────────────────────
+# ─── Integration Test ────────────────────────────────────────────────────────
 
 
 @pytest.mark.integration
@@ -490,7 +495,8 @@ def test_full_pipeline_with_mock_assessment(sample_docx_file, tmp_path, monkeypa
 
     Uses temporary files and mocks run_assessment to avoid actual processing.
     """
-    # Mock run_assessment to return realistic result with temp files
+    monkeypatch.setattr("api.routes.assessment.DB_PATH", TEST_DB)
+
     excel_file = tmp_path / "result.xlsx"
     pdf_file = tmp_path / "result.pdf"
     excel_file.write_bytes(b"mock excel")
@@ -528,14 +534,16 @@ def test_full_pipeline_with_mock_assessment(sample_docx_file, tmp_path, monkeypa
         assert response.status_code == 200
         session_id = response.json()["session_id"]
 
-        # Manually run the background task (since we're not in async context)
+        # Manually run the async background task
         from api.routes.assessment import _run_assessment_task
 
         request = AssessmentRequest(rpa_tool="uipath")
-        _run_assessment_task(
-            session_id,
-            f"data/temp/{session_id}.docx",  # Doesn't need to exist for mocked call
-            request,
+        asyncio.run(
+            _run_assessment_task(
+                session_id,
+                f"data/temp/{session_id}.docx",
+                request,
+            )
         )
 
         # Check status
