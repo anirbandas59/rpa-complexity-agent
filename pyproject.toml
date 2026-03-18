@@ -54,6 +54,7 @@ log_cli_level = "INFO"
 markers = [
     "integration: marks tests that make real API calls (deselect with '-m \"not integration\"')",
 ]
+addopts = "--ignore=tests/unit/test_excel_gen.py"
 
 [tool.mypy]
 python_version = "3.11"

@@ -14,7 +14,6 @@ build/
 
 # UV
 .uv/
-uv.lock
 
 # Environment
 .env
@@ -54,3 +53,5 @@ htmlcov/
 
 # mypy
 .mypy_cache/
+
+.claude/worktrees/
