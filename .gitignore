@@ -45,6 +45,7 @@ data/sessions.db
 !tests/fixtures/*.xlsx
 !tests/fixtures/*.pdf
 !tests/fixtures/*.pdf
+!data/sample_pdds/sample_*
 
 # Logs — track directory, exclude log files
 logs/*.log
