@@ -7,53 +7,43 @@ status polling, downloads, and the full upload-to-result flow.
 
 import asyncio
 import io
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
-import aiosqlite
 import pytest
 from fastapi.testclient import TestClient
 
 from api.main import app
-from api.routes.assessment import AssessmentRequest, get_session, set_session
+from api.routes.assessment import AssessmentRequest
 from core.exceptions import AgentExecutionError
 
-# ─── Test DB helpers ─────────────────────────────────────────────────────────
+# ─── In-memory session store (replaces SQLite for unit tests) ─────────────────
 
-TEST_DB = "/tmp/rpa_test_sessions.db"
-
-_CREATE_TABLE = """
-    CREATE TABLE IF NOT EXISTS sessions (
-        session_id   TEXT PRIMARY KEY,
-        status       TEXT,
-        created_at   REAL,
-        result_json  TEXT,
-        errors       TEXT,
-        output_excel TEXT,
-        output_pdf   TEXT
-    )
-"""
+_SESSION_STORE: dict = {}
 
 
-async def _init_db() -> None:
-    async with aiosqlite.connect(TEST_DB) as db:
-        await db.execute(_CREATE_TABLE)
-        await db.commit()
+async def _fake_get_session(session_id: str) -> dict | None:
+    return _SESSION_STORE.get(session_id)
 
 
-async def _clear_db() -> None:
-    async with aiosqlite.connect(TEST_DB) as db:
-        await db.execute("DELETE FROM sessions")
-        await db.commit()
+async def _fake_set_session(session_id: str, data: dict, ttl: int = 86400) -> None:
+    _SESSION_STORE[session_id] = data
+
+
+async def _fake_patch_status(session_id: str, status: str) -> None:
+    if session_id in _SESSION_STORE:
+        _SESSION_STORE[session_id]["status"] = status
+    else:
+        _SESSION_STORE[session_id] = {"session_id": session_id, "status": status}
 
 
 def put_session(session_id: str, data: dict) -> None:
-    """Sync helper: upsert a session row for test setup."""
-    asyncio.run(set_session(session_id, data))
+    """Sync helper: upsert a session for test setup."""
+    _SESSION_STORE[session_id] = data
 
 
 def get_session_sync(session_id: str) -> dict | None:
-    """Sync helper: fetch a session row for test assertions."""
-    return asyncio.run(get_session(session_id))
+    """Sync helper: fetch a session for test assertions."""
+    return _SESSION_STORE.get(session_id)
 
 
 # ─── Fixtures ────────────────────────────────────────────────────────────────
@@ -62,13 +52,14 @@ client = TestClient(app)
 
 
 @pytest.fixture(autouse=True)
-def use_test_db(monkeypatch):
-    """Redirect all DB calls to an isolated temp DB and clear it between tests."""
-    monkeypatch.setattr("api.routes.assessment.DB_PATH", TEST_DB)
-    asyncio.run(_init_db())
-    asyncio.run(_clear_db())
+def use_fake_store(monkeypatch):
+    """Redirect all store calls to in-memory dict and clear it between tests."""
+    _SESSION_STORE.clear()
+    monkeypatch.setattr("api.routes.assessment.get_session", _fake_get_session)
+    monkeypatch.setattr("api.routes.assessment.set_session", _fake_set_session)
+    monkeypatch.setattr("api.routes.assessment.patch_status", _fake_patch_status)
     yield
-    asyncio.run(_clear_db())
+    _SESSION_STORE.clear()
 
 
 @pytest.fixture
@@ -183,7 +174,7 @@ def test_post_assess_valid_pdf(mock_task, sample_pdf_file):
     assert data["status"] == "queued"
     assert "Assessment queued" in data["message"]
 
-    # Session should be in DB
+    # Session should be in store
     session = get_session_sync(data["session_id"])
     assert session is not None
     assert session["status"] == "queued"
@@ -518,14 +509,12 @@ def test_value_error_handler():
 
 
 @pytest.mark.integration
-def test_full_pipeline_with_mock_assessment(sample_docx_file, tmp_path, monkeypatch):
+def test_full_pipeline_with_mock_assessment(sample_docx_file, tmp_path):
     """
     Full integration test: Upload → Background task → Status → Download.
 
     Uses temporary files and mocks run_assessment to avoid actual processing.
     """
-    monkeypatch.setattr("api.routes.assessment.DB_PATH", TEST_DB)
-
     excel_file = tmp_path / "result.xlsx"
     pdf_file = tmp_path / "result.pdf"
     excel_file.write_bytes(b"mock excel")

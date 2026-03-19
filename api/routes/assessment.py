@@ -6,13 +6,10 @@ and output file downloads.
 """
 
 import asyncio
-import json
-import time
 import uuid
 from pathlib import Path
 from typing import Optional
 
-import aiosqlite
 from fastapi import (
     APIRouter,
     BackgroundTasks,
@@ -26,77 +23,13 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from agents import run_assessment
+from api.db.redis_store import get_session, patch_status, set_session
 from api.limiter import limiter
 from config.logging_config import get_logger
 
 router = APIRouter(prefix="/api", tags=["assessment"])
 
 logger = get_logger("api.assessment")
-
-DB_PATH = "data/sessions.db"
-
-
-# ─── SQLite session helpers ──────────────────────────────────────────────────
-
-
-async def get_session(session_id: str) -> dict | None:
-    """Return session data dict, or None if not found."""
-    async with aiosqlite.connect(DB_PATH) as db:
-        async with db.execute(
-            "SELECT status, result_json FROM sessions WHERE session_id = ?",
-            (session_id,),
-        ) as cursor:
-            row = await cursor.fetchone()
-
-    if row is None:
-        return None
-
-    result: dict = json.loads(row[1]) if row[1] else {}
-    # DB columns are authoritative for frequently-updated fields
-    result["session_id"] = session_id
-    result["status"] = row[0]
-    return result
-
-
-async def set_session(session_id: str, data: dict) -> None:
-    """Upsert session row.  created_at is preserved on conflict."""
-    status = data.get("status", "queued")
-    output_files = data.get("output_files") or {}
-    async with aiosqlite.connect(DB_PATH) as db:
-        await db.execute(
-            """
-            INSERT INTO sessions
-                (session_id, status, created_at, result_json, errors,
-                 output_excel, output_pdf)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(session_id) DO UPDATE SET
-                status       = excluded.status,
-                result_json  = excluded.result_json,
-                errors       = excluded.errors,
-                output_excel = excluded.output_excel,
-                output_pdf   = excluded.output_pdf
-            """,
-            (
-                session_id,
-                status,
-                time.time(),
-                json.dumps(data),
-                json.dumps(data.get("errors", [])),
-                output_files.get("excel", ""),
-                output_files.get("pdf", ""),
-            ),
-        )
-        await db.commit()
-
-
-async def _patch_status(session_id: str, status: str) -> None:
-    """Update only the status column (used for the processing→queued transition)."""
-    async with aiosqlite.connect(DB_PATH) as db:
-        await db.execute(
-            "UPDATE sessions SET status = ? WHERE session_id = ?",
-            (status, session_id),
-        )
-        await db.commit()
 
 
 # ─── Pydantic Models ─────────────────────────────────────────────────────────
@@ -162,7 +95,7 @@ async def _run_assessment_task(
     """
     try:
         # Step 1: Update status
-        await _patch_status(session_id, "processing")
+        await patch_status(session_id, "processing")
         logger.info(f"[{session_id}] Assessment processing started")
 
         # Step 2: Run sync assessment in thread pool so the event loop stays free

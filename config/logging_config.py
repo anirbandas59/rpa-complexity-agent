@@ -3,13 +3,33 @@ Structured logging configuration for RPA Complexity Assessment Agent.
 
 Uses Python standard logging to provide consistent formatting and routing
 for all project modules. All loggers use the "rpa_agent" namespace.
+
+Set LOG_FORMAT=json to emit JSON lines (useful in production / log aggregators).
 """
 
+import json
 import logging
 import logging.handlers
+import os
 from pathlib import Path
 
 from config.settings import get_settings
+
+
+class _JsonFormatter(logging.Formatter):
+    """Emit each log record as a single JSON line."""
+
+    def format(self, record: logging.LogRecord) -> str:
+        payload: dict = {
+            "ts": self.formatTime(record, self.datefmt),
+            "level": record.levelname,
+            "logger": record.name,
+            "msg": record.getMessage(),
+            "request_id": getattr(record, "request_id", None),
+        }
+        if record.exc_info:
+            payload["exc"] = self.formatException(record.exc_info)
+        return json.dumps(payload)
 
 
 def get_log_file_path() -> str:
@@ -55,11 +75,15 @@ def setup_logging(log_level: str | None = None) -> None:
     # Prevent propagation to root logger
     rpa_logger.propagate = False
 
-    # Log format
-    formatter = logging.Formatter(
-        fmt=("%(asctime)s | %(levelname)-8s | %(name)-40s | %(message)s"),
-        datefmt="%Y-%m-%d %H:%M:%S",
-    )
+    # Choose formatter based on LOG_FORMAT env var
+    use_json = os.environ.get("LOG_FORMAT", "").lower() == "json"
+    if use_json:
+        formatter: logging.Formatter = _JsonFormatter(datefmt="%Y-%m-%dT%H:%M:%S")
+    else:
+        formatter = logging.Formatter(
+            fmt=("%(asctime)s | %(levelname)-8s | %(name)-40s | %(message)s"),
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
 
     # Remove existing handlers to avoid duplicates
     for handler in rpa_logger.handlers[:]:
@@ -71,12 +95,14 @@ def setup_logging(log_level: str | None = None) -> None:
     stream_handler.setFormatter(formatter)
     rpa_logger.addHandler(stream_handler)
 
-    # FileHandler (logs/rpa_agent.log)
+    # RotatingFileHandler (logs/rpa_agent.log) — 10 MB per file, keep 5 backups
     log_file = get_log_file_path()
     log_dir = Path(log_file).parent
     log_dir.mkdir(parents=True, exist_ok=True)
 
-    file_handler = logging.FileHandler(log_file, mode="a")
+    file_handler = logging.handlers.RotatingFileHandler(
+        log_file, maxBytes=10_000_000, backupCount=5
+    )
     file_handler.setLevel(numeric_level)
     file_handler.setFormatter(formatter)
     rpa_logger.addHandler(file_handler)

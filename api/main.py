@@ -5,45 +5,24 @@ Main entry point for the API server. Sets up routes, middleware, exception
 handlers, and lifespan events.
 """
 
-import asyncio
-import time
 from contextlib import asynccontextmanager
-from pathlib import Path
 
-import aiosqlite
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
+from api.db.redis_store import close_store, init_store
 from api.limiter import limiter
 from api.middleware.auth import verify_api_key
 from api.middleware.error_handler import register_exception_handlers
+from api.middleware.request_id import RequestIdMiddleware
 from api.routes import assessment, health
 from config.logging_config import get_logger, setup_logging
 from config.settings import get_settings
 
 logger = get_logger("api.startup")
-
-DB_PATH = "data/sessions.db"
-
-_TTL_INTERVAL = 30 * 60  # seconds between cleanup runs
-_SESSION_TTL = 86_400  # seconds — delete sessions older than 24 hours
-
-
-async def _ttl_cleanup_loop() -> None:
-    """Background task: delete sessions older than SESSION_TTL every TTL_INTERVAL."""
-    while True:
-        await asyncio.sleep(_TTL_INTERVAL)
-        cutoff = time.time() - _SESSION_TTL
-        try:
-            async with aiosqlite.connect(DB_PATH) as db:
-                await db.execute("DELETE FROM sessions WHERE created_at < ?", (cutoff,))
-                await db.commit()
-            logger.debug("TTL cleanup: deleted sessions older than 24 h")
-        except Exception as exc:
-            logger.warning(f"TTL cleanup error: {exc}")
 
 
 @asynccontextmanager
@@ -53,54 +32,31 @@ async def lifespan(app: FastAPI):
 
     Startup:
     - Set up logging
-    - Create SQLite sessions DB and table
-    - Start TTL cleanup background task
+    - Connect to Redis session store
 
     Shutdown:
-    - Cancel TTL task
+    - Close Redis connection
     """
-    # Startup
     setup_logging()
     logger.info("RPA Complexity Assessment Agent API starting")
 
-    # Ensure data/ directory exists
-    Path("data").mkdir(exist_ok=True)
-
-    # Initialise SQLite session store
-    async with aiosqlite.connect(DB_PATH) as db:
-        await db.execute("""
-            CREATE TABLE IF NOT EXISTS sessions (
-                session_id  TEXT PRIMARY KEY,
-                status      TEXT,
-                created_at  REAL,
-                result_json TEXT,
-                errors      TEXT,
-                output_excel TEXT,
-                output_pdf   TEXT
-            )
-            """)
-        await db.commit()
-    logger.info(f"Session DB initialised at {DB_PATH}")
-
-    # Start TTL cleanup loop
-    cleanup_task = asyncio.create_task(_ttl_cleanup_loop())
+    await init_store()
 
     yield
 
-    # Shutdown
-    cleanup_task.cancel()
-    try:
-        await cleanup_task
-    except asyncio.CancelledError:
-        pass
+    await close_store()
     logger.info("API shutting down")
 
 
+_settings = get_settings()
+_is_production = _settings.environment == "production"
 app = FastAPI(
     title="RPA Complexity Assessment Agent",
     description="AI-powered RPA process complexity assessment",
     version="0.1.0",
     lifespan=lifespan,
+    docs_url=None if _is_production else "/docs",
+    redoc_url=None if _is_production else "/redoc",
 )
 
 # ── Rate limiting ─────────────────────────────────────────────────────────────
@@ -108,8 +64,10 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
 app.add_middleware(SlowAPIMiddleware)
 
+# ── Request-ID tracing (before CORS so ID is present throughout the stack) ────
+app.add_middleware(RequestIdMiddleware)
+
 # ── CORS ──────────────────────────────────────────────────────────────────────
-_settings = get_settings()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[_settings.frontend_url],

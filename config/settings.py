@@ -7,6 +7,7 @@ to ensure consistency.
 """
 
 from functools import lru_cache
+from typing import Literal
 
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -76,6 +77,12 @@ class Settings(BaseSettings):
         description="Temporary directory for processing",
     )
 
+    # Deployment environment
+    environment: Literal["development", "production"] = Field(
+        default="development",
+        description="Deployment environment: development | production",
+    )
+
     # API Security
     frontend_url: str = Field(
         default="http://localhost:8501",
@@ -84,6 +91,12 @@ class Settings(BaseSettings):
     api_secret_key: str = Field(
         default="",
         description="X-API-Key value required on protected endpoints; empty disables auth",
+    )
+
+    # Session Store
+    redis_url: str = Field(
+        default="redis://localhost:6379/0",
+        description="Redis connection URL for session storage",
     )
 
     # LLM Manager Behaviour
@@ -95,6 +108,15 @@ class Settings(BaseSettings):
         default=1.0,
         description="Base delay in seconds for exponential backoff",
     )
+
+    @model_validator(mode="after")
+    def validate_production_guards(self) -> "Settings":
+        """Enforce required settings for production deployments."""
+        if self.environment == "production" and not self.api_secret_key:
+            raise ValueError(
+                "API_SECRET_KEY must be set when ENVIRONMENT=production"
+            )
+        return self
 
     @model_validator(mode="after")
     def validate_provider_keys(self) -> "Settings":

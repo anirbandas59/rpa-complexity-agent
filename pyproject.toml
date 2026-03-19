@@ -5,47 +5,48 @@ description = "AI-powered RPA process complexity assessment agent"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "pydantic>=2.5.0",
-    "pydantic-settings>=2.1.0",
+    "pydantic>=2.10.0,<3.0",
+    "pydantic-settings>=2.7.0,<3.0",
     "python-dotenv>=1.0.0",
-    "langgraph>=0.0.40",
-    "langchain>=0.1.0",
-    "langchain-core>=0.1.0",
-    "pymupdf>=1.23.0",
-    "python-docx>=0.8.11",
-    "pdfplumber>=0.10.0",
-    "unstructured>=0.10.0",
-    "anthropic>=0.20.0",
-    "openai>=1.10.0",
-    "openpyxl>=3.1.0",
-    "reportlab>=4.0.0",
-    "fastapi>=0.104.0",
-    "uvicorn>=0.24.0",
-    "python-multipart>=0.0.6",
-    "streamlit>=1.28.0",
-    "pandas>=2.0.0",
-    "numpy>=1.24.0",
-    "httpx>=0.25.0",
+    "langgraph~=0.6",
+    "langchain~=0.3",
+    "langchain-core~=0.3",
+    "pymupdf>=1.25.0",
+    "python-docx>=1.0.0",        # 1.x has breaking API changes vs 0.8.x
+    "pdfplumber>=0.11.0",
+    "unstructured>=0.21.0",
+    "anthropic>=0.84.0",
+    "openai>=2.0.0",              # 2.x has breaking API changes vs 1.x
+    "openpyxl>=3.1.5",
+    "reportlab>=4.2.0",
+    "fastapi>=0.115.0,<1.0",
+    "uvicorn>=0.30.0,<1.0",
+    "python-multipart>=0.0.18",
+    "streamlit>=1.40.0",
+    "pandas>=2.2.0",
+    "numpy>=2.0.0",               # 2.x has breaking changes vs 1.x
+    "httpx>=0.27.0",
     "aiosqlite>=0.22.1",
     "slowapi>=0.1.9",
     "plotly>=6.6.0",
+    "redis[asyncio]>=7.3.0",
 ]
 
 [project.optional-dependencies]
 frontend = [
-    "streamlit>=1.32.0",
+    "streamlit>=1.40.0",
     "httpx>=0.27.0",
-    "plotly>=5.18.0",
+    "plotly>=6.6.0",
 ]
 
 [dependency-groups]
 dev = [
-    "pytest>=7.4.0",
-    "pytest-asyncio>=0.21.0",
-    "pytest-cov>=4.1.0",
-    "black>=23.0.0",
-    "ruff>=0.1.0",
-    "mypy>=1.7.0",
+    "pytest>=9.0.0",
+    "pytest-asyncio>=1.0.0",     # 1.x has breaking changes vs 0.x
+    "pytest-cov>=6.0.0",
+    "black>=26.0.0",
+    "ruff>=0.15.0",
+    "mypy>=1.15.0",
 ]
 
 [tool.black]
