@@ -5,7 +5,7 @@
 The easiest way to start the entire system (API + Frontend) is:
 
 ```bash
-cd /home/anirban/workspace/projects/rpa-complexity-agent
+cd rpa-complexity-agent
 ./run-frontend.sh
 ```
 
@@ -249,6 +249,5 @@ To customize ports/hosts, edit `run-frontend.sh` and modify these lines:
 
 ---
 
-**Last Updated:** 2026-03-17
+**Last Updated:** 2026-06-02
 **Project:** RPA Complexity Assessment Agent
-**Phase:** Phase 8 — API & Frontend

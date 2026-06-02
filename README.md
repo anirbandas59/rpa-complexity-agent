@@ -1,36 +1,22 @@
 # RPA Complexity Assessment Agent
 
-## IBM watsonx 2025 Challenge — Consulting Category
-
-> **Transform a 2–4 hour manual RPA complexity assessment into a sub-10 minute AI-powered workflow**
+> Transform a 2–4 hour manual RPA complexity assessment into a sub-10 minute AI-powered workflow
 
 ---
 
-## 🎯 Mission
+## Mission
 
 RPA delivery teams spend 2–4 hours per engagement manually assessing process complexity — reading PDDs, cross-referencing weight matrices, and estimating effort in Excel. This system replaces that workflow with a multi-agent AI pipeline: upload a PDD (PDF or DOCX), and receive a fully scored complexity report with Excel and PDF outputs in under 10 minutes. Built for RPA consultants who need reproducible, auditable assessments at scale.
 
 ---
 
-## 🏆 Challenge Alignment
-
-| Criterion | Implementation |
-| ----------- | ---------------- |
-| **watsonx Integration** | Multi-provider LLM abstraction layer supporting Anthropic, OpenAI, and IBM watsonx |
-| **Multi-Agent System** | 4 specialized LangGraph agents with supervised orchestration |
-| **Production Ready** | FastAPI + Streamlit web application, Docker deployment |
-| **Measurable Impact** | Reduces 2–4 hour assessment to <10 minutes |
-| **Domain Expertise** | Validated against real-world Excel workbook ground truth |
-
----
-
-## 🏗️ Architecture
+## Architecture
 
 ```mermaid
 graph TB
     PDD[Process Design Document\nPDF or DOCX]
 
-    subgraph "watsonx Orchestrate ADK Framework"
+    subgraph "Multi-Agent Pipeline"
       ORCH[Orchestrator\nrun_assessment]
 
       subgraph "Agent Pipeline"
@@ -63,48 +49,50 @@ graph TB
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
-- Docker and Docker Compose
+- Python 3.11+
+- [UV](https://github.com/astral-sh/uv) package manager
 - An Anthropic API key (or OpenAI/watsonx)
 
-### 5-Command Setup
+### Setup
 
 ```bash
 git clone <repository-url>
 cd rpa-complexity-agent
 cp .env.example .env
 # Edit .env and add your ANTHROPIC_API_KEY
-docker-compose up --build
+uv sync
+```
+
+### Run
+
+```bash
+# Start API + Frontend together (recommended)
+./run-frontend.sh
 ```
 
 Access:
 
-- **Frontend**: <http://localhost:8501>
+- **Frontend**: <http://localhost:8502>
 - **API**: <http://localhost:8000>
 - **API Docs**: <http://localhost:8000/docs>
 
-### Local Development (without Docker)
+### Run Services Separately
 
 ```bash
-# Install UV
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Install dependencies
-uv sync
-
 # Start API (Terminal 1)
 uv run uvicorn api.main:app --reload --port 8000
 
 # Start Frontend (Terminal 2)
-uv run streamlit run frontend/app.py --server.port 8501
+uv run streamlit run frontend/app.py --server.port 8502
 ```
 
 ---
 
-## 📊 How It Works
+## How It Works
 
 ### The 5 Complexity Attributes
 
@@ -140,7 +128,7 @@ Effort:      60 days / 6 two-week sprints
 
 ---
 
-## 🔧 Configuration
+## Configuration
 
 ### Environment Variables
 
@@ -163,7 +151,7 @@ Effort:      60 days / 6 two-week sprints
 
 ---
 
-## 🧪 Testing
+## Testing
 
 ```bash
 # Run all unit tests (no API calls)
@@ -171,9 +159,6 @@ uv run pytest tests/ -v -m "not integration"
 
 # Run ground truth validation
 uv run pytest tests/integration/test_ground_truth.py -v -s
-
-# Run Phase 1 scoring engine gate
-uv run python scripts/validate_scoring_engine.py
 
 # Run full integration tests (requires LLM API key)
 uv run pytest tests/integration/ -v -m "integration" -s
@@ -198,7 +183,7 @@ uv run pytest tests/integration/ -v -m "integration" -s
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```text
 rpa-complexity-agent/
@@ -214,12 +199,12 @@ rpa-complexity-agent/
 │   ├── reference/  # Scoring matrix JSON (source of truth)
 │   └── templates/  # Excel workbook template
 ├── tests/          # 1045+ tests
-└── scripts/        # Validation gate scripts
+└── STARTUP.md      # Detailed startup guide
 ```
 
 ---
 
-## 🎯 Key Design Decisions
+## Key Design Decisions
 
 **1. Deterministic Scoring Engine**
 The core scoring logic (weight matrix, classifier, effort table) is pure Python — zero LLM involvement. This guarantees reproducible results and was validated against the Excel workbook ground truth.
@@ -235,7 +220,7 @@ Every agent node is independently recoverable. A failed entity extraction return
 
 ---
 
-## 📋 Known Limitations
+## Known Limitations
 
 - LLM extraction accuracy varies with PDD quality (well-structured PDDs produce better results)
 - Scanned PDFs without OCR text are not supported
@@ -244,9 +229,8 @@ Every agent node is independently recoverable. A failed entity extraction return
 
 ---
 
-## 🔮 Roadmap
+## Roadmap
 
-- [ ] watsonx ADK migration (orchestration layer)
 - [ ] OCR support for scanned PDFs
 - [ ] Persistent session storage (PostgreSQL)
 - [ ] Batch assessment (multiple PDDs)
@@ -254,11 +238,6 @@ Every agent node is independently recoverable. A failed entity extraction return
 
 ---
 
-## 📄 License
+## License
 
 MIT License — See LICENSE file
-
----
-
-*Built for the IBM watsonx 2025 Challenge*
-*Consulting Category — RPA Delivery Automation*

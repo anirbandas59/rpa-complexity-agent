@@ -58,5 +58,4 @@ htmlcov/
 # mypy
 .mypy_cache/
 
-.claude/worktrees/
-/.claude
+CLAUDE.md
